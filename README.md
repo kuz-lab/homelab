@@ -41,13 +41,7 @@ Hi, I'm **Viacheslav Kuzin** (Slava). I work as an Amazon Robotics FC associate 
 
 ## Network Architecture
 
-```
-Internet → DrayTek Vigor 167 (bridge) → OPNsense (PCIe passthrough)
-                                            ↓
-                                     TP-Link SG105PE
-                                      ↓         ↓
-                                  UniFi U6+   Proxmox host
-```
+![Physical Topology](physical-topology.jpg)
 
 ### VLANs
 
