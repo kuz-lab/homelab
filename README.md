@@ -41,7 +41,7 @@ Hi, I'm **Viacheslav Kuzin** (Slava). I work as an Amazon Robotics FC associate 
 
 ## Network Architecture
 
-![Physical Topology](physical-topology.jpg)
+![Physical Topology](diagrams/physical-topology.jpg)
 
 ### VLANs
 
