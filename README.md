@@ -6,9 +6,46 @@ A self-hosted infrastructure environment built on Proxmox virtualization, OPNsen
 
 ## Architecture
 
-Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw WAN directly to an OPNsense VM running on Proxmox via PCIe NIC passthrough. OPNsense handles all routing, firewalling, NAT, and VLAN assignment. A managed TP-Link switch trunks tagged traffic to five VLANs, and a UniFi U6+ access point maps SSIDs to the appropriate VLANs for wireless clients.
+Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw PPPoE to OPNsense running as a VM on a dedicated 
+ZimaBoard 2 (Proxmox VE host, dual i226-V NICs bridged to the VM). 
+OPNsense handles routing, firewalling, NAT, DHCP, and VLAN assignment 
+across five VLANs: Management (99), Servers (40), Trusted (10), IoT (20), 
+and Guest (30). Tailscale runs on OPNsense via the os-tailscale plugin, 
+advertising all VLANs — remote access survives Cubi failures.
 
-![Physical topology: DSL modem bridged to OPNsense VM on Proxmox, managed PoE switch trunking five VLANs, UniFi Wi-Fi 6 AP](diagrams/Physical-topology.jpg)
+A UniFi USW-8 Lite PoE switch distributes tagged traffic. A UniFi U7 Lite 
+access point maps three SSIDs to their respective VLANs (Trusted, IoT, 
+Guest) for wireless clients.
+
+An MSI Cubi NUC runs all services on Proxmox VE as VMs and LXCs. Its 
+switch trunk (Port 7) carries Servers (40), Trusted (10), and 
+Management (99) only.
+
+### Switch port mapping
+
+| Port | Device | PoE | Notes |
+|------|--------|-----|-------|
+| 1 | U7 Lite AP | PoE+ | Servers native, tagged 10/20/30/99 |
+| 2–3 | Empty | PoE+ | Reserved |
+| 4 | SLZB-MR5U | PoE+ | Zigbee/Thread coordinator, VLAN 40 |
+| 5 | Emergency laptop | — | Trusted (10), failsafe LAN access |
+| 6 | Reserved | — | Future Raspberry Pi 5 |
+| 7 | MSI Cubi NUC | — | Trunk: VLANs 10/40/99 |
+| 8 | ZimaBoard 2 | — | LAN trunk to OPNsense, all VLANs |
+
+### Power and UPS
+
+All rack devices are protected by an Eaton Ellipse PRO 650 UPS. The UPS 
+connects to Cubi via USB HID as the NUT master. ZimaBoard is configured 
+as a NUT network slave — on low battery, ZimaBoard shuts down first, 
+then Cubi drains all VMs in tiered order before the UPS cuts power. 
+Recovery is fully automatic.
+
+An Eve Energy smart plug sits between the UPS and the DrayTek modem. 
+When OPNsense detects WAN failure and software recovery fails, HAOS 
+triggers the Eve Energy to power-cycle the modem automatically.
+
+![Physical topology: DSL modem bridged to OPNsense VM on Proxmox, managed PoE switch trunking five VLANs, UniFi Wi-Fi 6 AP](diagrams/Physical-topology.png)
 
 ---
 
