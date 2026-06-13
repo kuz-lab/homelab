@@ -45,7 +45,7 @@ An Eve Energy smart plug sits between the UPS and the DrayTek modem.
 When OPNsense detects WAN failure and software recovery fails, HAOS 
 triggers the Eve Energy to power-cycle the modem automatically.
 
-![Physical topology: DSL modem bridged to OPNsense VM on Proxmox, managed PoE switch trunking five VLANs, UniFi Wi-Fi 6 AP](diagrams/Physical-topology.png)
+![Physical topology: DSL modem bridged to OPNsense VM on Proxmox, managed PoE switch trunking five VLANs, UniFi Wi-Fi 6 AP](diagrams/Physical_topology.png)
 
 ---
 
