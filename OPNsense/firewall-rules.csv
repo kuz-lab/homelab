@@ -7,7 +7,9 @@ Seq,Action,Interface,Protocol,Source,Destination,Port,Log,Description
 1055,pass,opt2,UDP,opt2,mDNS_Multicast,5353,0,Trusted: mDNS discovery
 1057,pass,opt5,TCP/UDP,opt5,any,domain,0,Servers: External DNS for ACME challenges
 1157,pass,opt2,TCP,opt2,HOST_HAOS,PORTS_HAOS_Trusted,0,"Trusted: HAOS services (Music Assistant, Puppet)"
-1257,pass,opt2,TCP,opt2,HOST_Cubi_Proxmox,ssh,0,Trusted: SSH to Proxmox (bastion)
+1257,pass,opt2,TCP,HOST_MBP16,HOST_Cubi_Proxmox,ssh,0,Trusted: SSH to Proxmox (bastion)
+1269,pass,opt2,TCP,HOST_MBP16,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",PORTS_Proxmox,0,Trusted: MBP16 to webGUI Proxmox
+1275,pass,opt2,TCP,HOST_MBP16,OPNsense_Mgmt,https,0,Trusted: MBP16 to OPNsense WebGUI
 1282,pass,opt2,TCP,opt2,HOST_Modem,PORTS_Web,0,Trusted: DrayTek modem WebGUI
 1307,block,opt2,any,opt2,RFC1918,,1,Trusted: BLOCK all other internal traffic
 1357,pass,opt2,any,opt2,any,,0,Trusted: Internet access
@@ -36,7 +38,7 @@ Seq,Action,Interface,Protocol,Source,Destination,Port,Log,Description
 4372,pass,opt5,TCP,HOST_Paperless,any,imaps,0,Paperless-ngx IMAP to Gmail 
 4422,pass,opt5,TCP,opt5,any,PORTS_Web,0,Servers: Internet updates and cert renewal
 4472,pass,opt5,UDP,opt5,any,123,0,Servers: Internet NTP
-4522,pass,opt1,any,HOST_Cubi_Proxmox,OPNsense_Mgmt,,0,"Proxmox to OPNsense (SSH, WebGUI, ICMP)"
+4522,pass,opt1,TCP,HOST_Cubi_Proxmox,OPNsense_Mgmt,PORTS_mgmt_SSH_WEB,0,"Proxmox to OPNsense (SSH, WebGUI, ICMP)"
 4525,pass,opt1,TCP/UDP,opt1,OPNsense_Mgmt,domain,0,Management: DNS to Unbound
 5000,pass,opt1,TCP,GROUP_NetDevices,HOST_UniFI,PORTS_UniFi,0,Management: AP to UniFi controller on Servers
 5002,pass,opt1,TCP,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",HOST_HAOS,PORTS_HAOS_Web,0,Management: Cubi to HAOS API (CPU temp sensor)
