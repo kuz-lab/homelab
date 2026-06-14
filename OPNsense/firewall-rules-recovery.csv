@@ -1,5 +1,4 @@
 @uuid;enabled;statetype;state-policy;sequence;action;quick;interfacenot;interface;direction;ipprotocol;protocol;icmptype;icmp6type;source_net;source_not;source_port;destination_net;destination_not;destination_port;divert-to;gateway;replyto;disablereplyto;log;allowopts;nosync;nopfsync;statetimeout;udp-first;udp-multiple;udp-single;max-src-nodes;max-src-states;max-src-conn;max;max-src-conn-rate;max-src-conn-rates;overload;adaptivestart;adaptiveend;prio;set-prio;set-prio-low;tag;tagged;tcpflags1;tcpflags2;tcpflags_any;categories;sched;tos;shaper1;shaper2;description
-
 34f7f696-f007-4963-98f4-98ba85ef52e8;1;keep;;1000;pass;1;0;opt2;in;inet;TCP;;;opt2;0;;HOST_Caddy;0;443;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;0;;;;;;"Trusted: Services via Caddy (HTTPS)"
 5c6c2552-c8ba-4779-b4c3-4e2ff5892e0d;1;keep;;1010;pass;1;0;opt2;in;inet;UDP;;;opt2;0;;HOST_AdGuard;0;53;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;0;;;;;;"Trusted: DNS to AdGuard (UDP)"
 39bc6891-708a-4cb9-bc0d-6ea15ffc173d;1;keep;;1011;pass;1;0;opt2;in;inet;TCP;;;opt2;0;;HOST_AdGuard;0;53;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;0;;;;;;"Trusted: DNS to AdGuard (TCP)"
