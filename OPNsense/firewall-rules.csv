@@ -1,0 +1,49 @@
+Seq,Action,Interface,Protocol,Source,Destination,Port,Log,Description
+1000,pass,opt2,TCP,opt2,HOST_Caddy,443,0,Trusted: Services via Caddy (HTTPS)
+1010,pass,opt2,UDP,opt2,HOST_AdGuard,53,0,Trusted: DNS to AdGuard (UDP)
+1011,pass,opt2,TCP,opt2,HOST_AdGuard,53,0,Trusted: DNS to AdGuard (TCP)
+1040,pass,opt2,TCP,HOST_MBP16,HOST_Wazuh_Server,PORTS_Wazuh,0,Trusted: Wazuh agent (Macbook16Pro)
+1050,pass,opt2,any,opt2,opt3,,0,"Trusted: IoT access (AirPlay, Sonos, device admin)"
+1055,pass,opt2,UDP,opt2,mDNS_Multicast,5353,0,Trusted: mDNS discovery
+1057,pass,opt5,TCP/UDP,opt5,any,domain,0,Servers: External DNS for ACME challenges
+1157,pass,opt2,TCP,opt2,HOST_HAOS,PORTS_HAOS_Trusted,0,"Trusted: HAOS services (Music Assistant, Puppet)"
+1257,pass,opt2,TCP,opt2,HOST_Cubi_Proxmox,ssh,0,Trusted: SSH to Proxmox (bastion)
+1282,pass,opt2,TCP,opt2,HOST_Modem,PORTS_Web,0,Trusted: DrayTek modem WebGUI
+1307,block,opt2,any,opt2,RFC1918,,1,Trusted: BLOCK all other internal traffic
+1357,pass,opt2,any,opt2,any,,0,Trusted: Internet access
+2000,pass,opt3,UDP,opt3,HOST_AdGuard,53,0,IoT: DNS to AdGuard (UDP)
+2001,pass,opt3,TCP,opt3,HOST_AdGuard,53,0,IoT: DNS to AdGuard (TCP)
+2005,pass,opt3,UDP,opt3,mDNS_Multicast,5353,0,IoT: mDNS for device discovery
+2007,pass,opt3,TCP,opt3,HOST_HAOS,PORTS_HAOS_IoT,0,"IoT: Smart home to HAOS (Sonos, Music Assistant)"
+2108,block,opt3,any,opt3,RFC1918,,1,IoT: BLOCK all internal networks
+2158,pass,opt3,TCP,opt3,any,PORTS_Web,0,IoT: Internet HTTP/HTTPS (cloud APIs)
+2208,pass,opt3,UDP,opt3,any,123,0,IoT: Internet NTP time sync
+3000,pass,opt4,UDP,opt4,HOST_AdGuard,53,0,Guest: DNS to AdGuard (UDP)
+3001,pass,opt4,TCP,opt4,HOST_AdGuard,53,0,Guest: DNS to AdGuard (TCP)
+3010,block,opt4,any,opt4,RFC1918,,1,Guest: BLOCK all internal networks
+3020,pass,opt4,TCP,opt4,any,PORTS_Web,0,Guest: Internet HTTP/HTTPS
+4000,pass,opt5,UDP,opt5,OPNsense_GW40,53,0,Servers: DNS to Unbound (UDP)
+4001,pass,opt5,TCP,opt5,OPNsense_GW40,53,0,Servers: DNS to Unbound (TCP)
+4010,pass,opt5,any,HOST_HAOS,opt3,,0,"Servers: HAOS to IoT (ESPHome, miio, Shelly, Sonos)"
+4020,pass,opt5,TCP,HOST_UniFI,GROUP_NetDevices,PORTS_UniFi,0,Servers: UniFi controller to AP on Management
+4022,pass,opt5,TCP,HOST_Caddy,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",PORTS_Proxmox,0,Servers: Caddy to Proxmox WebGUI (reverse proxy)
+4072,pass,opt5,TCP,"HOST_Homepage,HOST_Kuma","HOST_Cubi_Proxmox,HOST_Zima_Proxmox",PORTS_Proxmox,0,"Servers: Monitoring to Proxmox (Kuma, Homepage)"
+4122,pass,opt5,TCP,"HOST_Homepage,HOST_Kuma",OPNsense_Mgmt,https,0,"Servers: Monitoring to OPNsense (Kuma, Homepage)"
+4172,pass,opt5,UDP,opt5,mDNS_Multicast,5353,0,Servers: mDNS for device discovery
+4222,pass,opt5,TCP/UDP,HOST_HAOS,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",PORTS_HAOS_Cubi,0,"Servers: HAOS to Proxmox (Samba, NUT, API sensors)"
+4272,pass,opt5,TCP,opt5,OPNsense_GW40,https,0,Servers: OPNsense WebGUI access
+4322,block,opt5,any,opt5,RFC1918,,1,Servers: BLOCK all other internal traffic
+4372,pass,opt5,TCP,HOST_Paperless,any,imaps,0,Paperless-ngx IMAP to Gmail 
+4422,pass,opt5,TCP,opt5,any,PORTS_Web,0,Servers: Internet updates and cert renewal
+4472,pass,opt5,UDP,opt5,any,123,0,Servers: Internet NTP
+4522,pass,opt1,any,HOST_Cubi_Proxmox,OPNsense_Mgmt,,0,"Proxmox to OPNsense (SSH, WebGUI, ICMP)"
+4525,pass,opt1,TCP/UDP,opt1,OPNsense_Mgmt,domain,0,Management: DNS to Unbound
+5000,pass,opt1,TCP,GROUP_NetDevices,HOST_UniFI,PORTS_UniFi,0,Management: AP to UniFi controller on Servers
+5002,pass,opt1,TCP,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",HOST_HAOS,PORTS_HAOS_Web,0,Management: Cubi to HAOS API (CPU temp sensor)
+5005,pass,opt1,TCP,"HOST_Cubi_Proxmox,HOST_Zima_Proxmox",HOST_ntfy,http,0,"Management: Proxmox hosts to ntfy (webhooks, NUT alerts)"
+5010,block,opt1,any,opt1,RFC1918,,1,Management: BLOCK all other internal traffic
+5020,pass,opt1,TCP,opt1,any,PORTS_Web,0,Management: Internet (AP firmware updates)
+5030,pass,opt1,UDP,opt1,any,123,0,Management: NTP
+6000,pass,lan,any,lan,any,,0,LAN: Default allow (SAFETY FALLBACK - do not delete)
+6010,pass,lan,any,lan,any,,0,LAN: Default allow IPv6 (SAFETY FALLBACK)
+6210,pass,opt4,UDP,any,any,ntp,0,Guest: NTP Time sync
