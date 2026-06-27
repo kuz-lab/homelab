@@ -183,8 +183,8 @@ All OPNsense rules use named aliases — zero raw IPs. The ruleset is exported, 
 
 | Device | Model | Role |
 |--------|-------|------|
-| Services host | MSI Cubi NUC (i5-120U, 40 GB DDR5, 512 GB NVMe + 1 TB SSD) | Proxmox VE — all VMs and LXCs |
-| Firewall host | ZimaBoard 2 (2x i226-V 2.5 GbE) | Proxmox VE — dedicated OPNsense VM |
+| Services host | MSI Cubi NUC (i5-120U, 40 GB DDR5, 1 TB NVMe + 1 TB SSD) | Proxmox VE — all VMs and LXCs |
+| Firewall host | ZimaBoard 2 N150, 16 GB LPDDR5, 512 GB NVMe(2x i226-V 2.5 GbE) | Proxmox VE — dedicated OPNsense VM |
 | Modem | DrayTek Vigor 167 | Bridge mode, raw WAN passthrough |
 | Switch | UniFi USW-Lite-8-PoE | Managed, 8-port PoE, VLAN trunking |
 | WiFi AP | UniFi U7 Lite | Wi-Fi 7, three SSIDs |
