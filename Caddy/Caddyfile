@@ -1,0 +1,139 @@
+{
+        email kuzin.viacheslav@gmail.com
+        admin 0.0.0.0:2019
+}
+
+# ─── Snippets ──────────────────────────────────────────────
+
+(tls_cf) {
+        tls {
+                dns cloudflare {env.CF_API_TOKEN}
+        }
+}
+
+(common) {
+        encode gzip zstd
+        header {
+                Strict-Transport-Security "max-age=31536000; includeSubDomains"
+                X-Content-Type-Options "nosniff"
+                Referrer-Policy "strict-origin-when-cross-origin"
+                -Server
+        }
+}
+
+(insecure_https_upstream) {
+        transport http {
+                tls_insecure_skip_verify
+        }
+}
+
+# ─── Sites ─────────────────────────────────────────────────
+
+cubi.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy https://192.168.99.2:8006 {
+                import insecure_https_upstream
+        }
+        handle_errors {
+                respond "{http.error.status_code} {http.error.message}" {http.error.status_code}
+        }
+}
+
+zima.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy https://192.168.99.3:8006 {
+                import insecure_https_upstream
+        }
+        handle_errors {
+                respond "{http.error.status_code} {http.error.message}" {http.error.status_code}
+        }
+}
+
+
+
+
+haos.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.10:8123
+}
+
+vault.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.13:8080
+}
+
+adguard.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.11:3000
+}
+
+git.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.14:3000
+}
+
+plx.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.15:8000
+}
+
+nr.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.16:1880
+}
+
+budget.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.17:5006
+}
+
+unifi.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy https://192.168.40.18:11443 {
+                import insecure_https_upstream
+                header_up Host {host}
+        }
+}
+
+wazuh.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy https://192.168.40.19:5601 {
+                import insecure_https_upstream
+        }
+}
+
+ntfy.kuzlab.dev {
+        import tls_cf
+        reverse_proxy 192.168.40.20:80 {
+                flush_interval -1
+        }
+}
+
+ma.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.10:8095
+}
+
+home.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.21:3000
+}
+
+kuma.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.22:3001
+}
