@@ -2,7 +2,7 @@
 
 A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VLAN network segmentation — designed and operated as a real working lab for networking, security operations, and systems administration.
 
-Built as part of a career transition into SOC analysis and infrastructure support. Everything here runs 24/7 and doubles as my daily-use environment.
+This homelab runs 24/7 and serves as my real daily-use environment, not just a test setup.
 
 > **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 13 services · Wazuh SIEM · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
@@ -141,6 +141,8 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 ### Reverse Proxy
 
 Caddy runs in Docker (using [`caddy-cloudflare`](https://github.com/caddy-builds/caddy-cloudflare)) and handles TLS for all `*.kuzlab.dev` subdomains via Cloudflare DNS-01.
+
+Configuration: [Caddyfile](Caddy/Caddyfile)
 
 ### Remote Access
 
