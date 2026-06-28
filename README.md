@@ -2,6 +2,8 @@
 
 A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VLAN network segmentation — designed and operated as a real working lab for networking, security operations, and systems administration.
 
+Built as part of a career transition into SOC analysis and infrastructure support. Everything here runs 24/7 and doubles as my daily-use environment.
+
 > **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 13 services · Wazuh SIEM · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
 [Architecture](#architecture) · [Network](#network-design) · [Services](#services) · [Security](#security-and-monitoring) · [Backups](#backups) · [Hardware](#hardware) · [Roadmap](#roadmap)
@@ -10,11 +12,15 @@ A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VL
 
 ## Architecture
 
-Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw PPPoE to OPNsense running as a VM on a dedicated ZimaBoard 2. OPNsense handles routing, firewalling, NAT, DHCP, and VLAN assignment. Tailscale runs on OPNsense via the os-tailscale plugin, advertising all VLANs — so remote access still works even if the main services host goes down.
+Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw PPPoE to OPNsense running as a VM on a dedicated ZimaBoard 2. OPNsense handles routing, firewalling, NAT, DHCP, and VLAN assignment.
 
-A UniFi USW-Lite-8-PoE switch distributes tagged traffic. A UniFi U7 Lite AP maps three SSIDs to Trusted, IoT, and Guest VLANs.
+OPNsense runs on its own host so that a failure on the main services machine doesn't take down the entire network. Before this split, everything lived on one NUC — a single point of failure for the whole stack.
 
-An MSI Cubi NUC runs all services on Proxmox VE as VMs and LXCs.
+Tailscale runs on OPNsense via the os-tailscale plugin, advertising all five VLANs. This means remote access keeps working even if the services host goes down — I can still reach OPNsense, diagnose the problem, and bring things back up.
+
+A UniFi USW-Lite-8-PoE switch distributes tagged traffic across VLANs. A UniFi U7 Lite AP maps three SSIDs to Trusted, IoT, and Guest networks.
+
+The MSI Cubi NUC runs all services on Proxmox VE as VMs and LXCs.
 
 ![Physical topology: DSL modem bridged to OPNsense VM on ZimaBoard, managed PoE switch trunking five VLANs, UniFi Wi-Fi 7 AP](diagrams/Physical_topology.png)
 
@@ -38,11 +44,9 @@ An MSI Cubi NUC runs all services on Proxmox VE as VMs and LXCs.
 
 Everything is on an Eaton Ellipse PRO 650 UPS. Cubi is the NUT master, ZimaBoard is a network slave. On low battery, ZimaBoard shuts down first (takes the network with it), then Cubi drains all VMs in tiered order before the UPS cuts power. Recovery is fully automatic — tested end-to-end.
 
-Power Recovery diagran:
-![Power and WAN recovery flow and sequences](diagrams/power-wan-recovery.png)
-
-
 An Eve Energy smart plug on the DrayTek modem allows HAOS to power-cycle it automatically when the WAN watchdog detects a failure that software recovery can't fix.
+
+![Power failure shutdown chain and WAN recovery with sequences](diagrams/power-wan-recovery.png)
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
@@ -50,9 +54,9 @@ An Eve Energy smart plug on the DrayTek modem allows HAOS to power-cycle it auto
 
 ## Network Design
 
-Inter-VLAN traffic is denied by default (RFC1918 block on every interface). All firewall rules use named aliases — no raw IPs anywhere.
+Inter-VLAN traffic is denied by default (RFC1918 block on every interface). All firewall rules use named aliases — no raw IPs anywhere. The idea is simple: nothing talks to anything unless there's an explicit rule for it, and every rule is readable without having to look up what address it points to.
 
-![Firewall policy: five VLANs arranged by trust level with allowed flows](diagrams/firewall_policy.png)
+![VLAN policy matrix showing allowed, conditional, and blocked cross-VLAN flows](diagrams/vlan-policy-matrix.png)
 
 ### VLANs
 
@@ -87,7 +91,7 @@ Servers / Management            → Unbound (recursive) → Root servers
 
 Servers bypass AdGuard on purpose — infrastructure DNS shouldn't depend on a filtering service. If AdGuard goes down, only client devices lose DNS; servers keep resolving.
 
-No fallback DNS for clients — if AdGuard goes down, DNS fails visibly rather than silently bypassing filtering.
+No fallback DNS for clients — if AdGuard goes down, DNS fails visibly rather than silently bypassing filtering. That's intentional: I'd rather know it's broken than have unfiltered traffic I don't know about.
 
 `*.kuzlab.dev` resolves via Cloudflare to Caddy, which handles TLS automatically through DNS-01 challenge.
 
@@ -104,13 +108,17 @@ Daily use goes through Caddy reverse proxy. Remote access uses Tailscale. Infras
 | Emergency SSH | MacBook → Proxmox Cubi (bastion) |
 | Break-glass | Cable to VLAN 99 switch port, static IP, no routing needed |
 
-Each layer removes a dependency — from Tailscale (needs WAN + OPNsense + Tailscale) down to the break-glass port (needs only the switch powered).
+Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscale service all working. The local firewall rule just needs OPNsense routing. The break-glass port only needs the switch to be powered — no routing, no software, just a cable.
+
+![Ingress paths, DNS architecture, and remote/recovery access](diagrams/ingress-dns-access.png)
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
 ---
 
 ## Services
+
+![Service placement across edge host, services host, and external integrations](diagrams/service-map-by-host.png)
 
 ### Proxmox Guest Inventory
 
@@ -130,13 +138,9 @@ Each layer removes a dependency — from Tailscale (needs WAN + OPNsense + Tails
 | CT 113 | Homepage | LXC | Dashboard | 192.168.40.21 |
 | CT 114 | Uptime Kuma | LXC | Service monitoring | 192.168.40.22 |
 
-### Service Dependencies
-
-![Service dependencies: clients connect through Caddy, DNS split between AdGuard and Unbound, Tailscale for remote management via OPNsense](diagrams/service_dependencies.png)
-
 ### Reverse Proxy
 
-Caddy runs in Docker (using [`caddy-cloudflare`](https://github.com/caddy-builds/caddy-cloudflare)) and handles TLS for all `*.kuzlab.dev` subdomains via Cloudflare DNS-01. Previously ran as a Debian package — migrated to Docker after a system upgrade broke the Cloudflare DNS plugin.
+Caddy runs in Docker (using [`caddy-cloudflare`](https://github.com/caddy-builds/caddy-cloudflare)) and handles TLS for all `*.kuzlab.dev` subdomains via Cloudflare DNS-01.
 
 ### Remote Access
 
@@ -150,19 +154,17 @@ Tailscale runs on OPNsense via the os-tailscale plugin with advertised routes fo
 
 ### Wazuh SIEM
 
-Wazuh runs as a dedicated VM with agents across the Proxmox hosts, OPNsense, supported VMs and LXCs, and my MacBook. Alerts go to ntfy via Dashboard Alerting monitors, plus a daily digest with CVE counts and top noisy rules.
+Wazuh runs as a dedicated VM with agents on the Proxmox hosts, OPNsense, supported VMs and LXCs, and my MacBook. It scans for vulnerabilities, collects logs, and alerts on security events.
 
-**What it catches:**
-- Vulnerability scans across all guests
-- Real-time log collection
-- Security event alerting by severity
+In practice, the main value is straightforward: when Wazuh flags a new CVE, that's my signal to schedule patching in the next maintenance window. I update the affected hosts, verify nothing broke, and move on. It's not a full SOC workflow — but it gives me real visibility into what needs attention and keeps the environment consistently patched.
 
-**Some real cases:**
-- **OpenSSL RCE (CVE-2025-15467, CVSS 8.8)** — Detected across multiple agents. Patched, restarted affected services, verified TLS still working. No downtime.
-- **120+ critical CVEs from kernel 6.8** — Resolved by upgrading to kernel 6.17.
-- **UniFi OS CVE flood** — Debian 12 base had unfixable CVEs. Rebuilt on clean Debian 13, brought CVE count to near zero.
-- **rclone CVE-2026-41179** — Detected and patched.
-- **telnetd CVE** — Flagged as critical. Dismissed after verifying telnetd isn't installed anywhere.
+Alerts go to ntfy via Dashboard Alerting monitors, and a daily digest summarizes CVE counts and noisy rules so I don't have to check the dashboard every day.
+
+**A few real examples of how this has helped:**
+
+- Wazuh flagged 120+ critical CVEs from an outdated kernel — resolved by upgrading to a supported HWE kernel.
+- The UniFi controller's Debian 12 base had unfixable CVEs piling up. Rebuilt it on clean Debian 13, brought the count to near zero.
+- Caught an OpenSSL vulnerability across multiple hosts. Patched and verified TLS was still working, no downtime.
 
 ### Firewall Rules
 
@@ -174,10 +176,12 @@ All OPNsense rules use named aliases — zero raw IPs. The ruleset is exported, 
 
 ## Backups
 
-- **Local:** Proxmox vzdump to dedicated SSD — three tiers (daily critical, daily secondary, monthly)
+Backups follow a 3-2-1 approach for critical services: three copies, two media types, one offsite.
+
+- **Local:** Proxmox vzdump to a dedicated SSD — three tiers based on how critical the data is (daily for things like Gitea and Vaultwarden, monthly for the Windows VM)
 - **Offsite:** rclone sync to Backblaze B2, EU Central, ~$3/mo for ~380 GB
-- **OPNsense:** Daily config backup via NFS
-- **Status:** 3-2-1 achieved for critical guests
+- **OPNsense:** Daily config backup via NFS from ZimaBoard to Cubi
+- **Restore testing:** HAOS was restored to a new VMID as a drill — confirmed the backup chain works end-to-end
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
@@ -188,7 +192,7 @@ All OPNsense rules use named aliases — zero raw IPs. The ruleset is exported, 
 | Device | Model | Role |
 |--------|-------|------|
 | Services host | MSI Cubi NUC (i5-120U, 40 GB DDR5, 1 TB NVMe + 1 TB SSD) | Proxmox VE — all VMs and LXCs |
-| Firewall host | ZimaBoard 2 N150, 16 GB LPDDR5, 512 GB NVMe(2x i226-V 2.5 GbE) | Proxmox VE — dedicated OPNsense VM |
+| Firewall host | ZimaBoard 2 N150, 16 GB LPDDR5, 512 GB NVMe (2x i226-V 2.5 GbE) | Proxmox VE — dedicated OPNsense VM |
 | Modem | DrayTek Vigor 167 | Bridge mode, raw WAN passthrough |
 | Switch | UniFi USW-Lite-8-PoE | Managed, 8-port PoE, VLAN trunking |
 | WiFi AP | UniFi U7 Lite | Wi-Fi 7, three SSIDs |
@@ -225,8 +229,8 @@ All OPNsense rules use named aliases — zero raw IPs. The ruleset is exported, 
 
 ## About
 
-This lab is part of a career transition into IT — targeting SOC Analyst or infrastructure support roles. I'm a Polish citizen based in Germany, planning to relocate to Wroclaw, Poland within the next year. Languages: Russian (native), Polish (C1), English (professional).
+This lab is part of a career transition into IT — targeting SOC Analyst or infrastructure support roles. I'm a Polish citizen based in Germany, planning to relocate to Wrocław, Poland within the next year. Languages: Russian (native), Polish (C1), English (professional).
 
-Everything here is real, running 24/7, and built from scratch over the past year. It's both my daily-use environment and a learning platform.
+Everything here is built from scratch over the past year. It's both my daily-use environment and a learning platform — every decision here is something I can explain and defend.
 
 - **LinkedIn:** [kuzin-viacheslav](https://linkedin.com/in/kuzin-viacheslav)
