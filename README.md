@@ -38,6 +38,10 @@ An MSI Cubi NUC runs all services on Proxmox VE as VMs and LXCs.
 
 Everything is on an Eaton Ellipse PRO 650 UPS. Cubi is the NUT master, ZimaBoard is a network slave. On low battery, ZimaBoard shuts down first (takes the network with it), then Cubi drains all VMs in tiered order before the UPS cuts power. Recovery is fully automatic — tested end-to-end.
 
+Power Recovery diagran:
+![Power and WAN recovery flow and sequences](diagrams/power-wan-recovery.svg)
+
+
 An Eve Energy smart plug on the DrayTek modem allows HAOS to power-cycle it automatically when the WAN watchdog detects a failure that software recovery can't fix.
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)
