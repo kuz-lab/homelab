@@ -226,8 +226,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - Firewall access model review and case study
 - Detection and triage case studies
 - Proxmox WebAuthn passkeys
-- **CompTIA Security+ (SY0-701)** — Aug/Sep 2026
-- Finish **Cisco NetAcad Network Technician**
+- Finish Cisco NetAcad Network Technician
 - Raspberry Pi 5 for PBS, secondary DNS, monitoring
 - UniFi Guest WiFi captive portal
 - Additional services: Immich, Stirling-PDF
@@ -236,8 +235,9 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 
 ## About
 
-This lab is part of a career transition into IT — targeting SOC Analyst or infrastructure support roles. I'm a Polish citizen based in Germany, planning to relocate to Wrocław, Poland within the next year. Languages: Russian (native), Polish (C1), English (professional).
+This lab is part of a career transition into IT. I'm a Polish citizen based in Germany. Languages: Russian (native), Polish (C1), English (professional), German (basic).
 
 Everything here is built from scratch over the past year. It's both my daily-use environment and a learning platform — every decision here is something I can explain and defend.
+
 
 - **LinkedIn:** [kuzin-viacheslav](https://linkedin.com/in/kuzin-viacheslav)
