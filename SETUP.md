@@ -6,7 +6,7 @@ Physical hardware, workspace, and the dashboards that run on top of it.
 
 ## Rack
 
-Waveshare 10-inch mini rack, 7U. Everything fits in one compact unit — modem, patch panel, switch, NUC, and space reserved for a Raspberry Pi 5. The Eaton UPS sits beside it.
+Waveshare 10-inch mini rack, 8U. Everything fits in one compact unit — modem, patch panel, switch, NUC, and space reserved for a Raspberry Pi 5. The Eaton UPS sits beside it.
 
 ### Front
 
