@@ -56,8 +56,7 @@ The dedicated firewall host. Only one VM — OPNsense. Task log shows the nightl
 
 ![Home Assistant dashboard — room temperatures, weather, system health, power consumption](screenshots/HAOS.png)
 
-Room-by-room climate monitoring with Eve Thermo TRVs. Weather card with forecast. System card showing Cubi health (CPU, RAM, temperature, UPS). Power consumption breakdown per device. Window and door sensor states.
-
+Home Assistant dashboard showing both Proxmox hosts (Cubi and ZimaBoard) with CPU, RAM, storage, and temperature monitoring. All VMs and containers are visible with resource usage. UPS status, UniFi AP with connected clients, and OPNsense health are tracked from one place.
 ### Uptime Kuma
 
 ![Uptime Kuma — 18 monitors, uptime history, recent events](screenshots/UptimeKuma.png)
