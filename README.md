@@ -6,7 +6,10 @@ This homelab runs 24/7 and serves as my real daily-use environment, not just a t
 
 > **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 13 services · Wazuh SIEM · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
-Physical setup and dashboard screenshots: [SETUP.md](SETUP.md)
+> 📷 **[Physical setup and dashboard screenshots →](SETUP.md)**
+
+Troubleshooting notes: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
 
 [Architecture](#architecture) · [Network](#network-design) · [Services](#services) · [Security](#security-and-monitoring) · [Backups](#backups) · [Hardware](#hardware) · [Roadmap](#roadmap)
 
