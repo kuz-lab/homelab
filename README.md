@@ -143,6 +143,8 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 | CT 113 | Homepage | LXC | Dashboard | 192.168.40.21 |
 | CT 114 | Uptime Kuma | LXC | Service monitoring | 192.168.40.22 |
 
+---
+
 ### Home Automation
 
 Home Assistant OS (VM 202) runs dashboards and automations, with ESPHome-flashed devices (BLE proxies, an e-paper display) feeding it sensor data over the IoT VLAN.
@@ -152,8 +154,6 @@ More detail: [HomeAssistant.md](HomeAssistant.md)
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
 ---
-
-
 
 ### Reverse Proxy
 
