@@ -1,0 +1,171 @@
+esphome:
+  name: paper
+  friendly_name: paper
+  on_boot:
+    priority: -100
+    then:
+      # Safety fallback: if image download/display update does not finish,
+      # do not stay online indefinitely.
+      - delay: 150s
+      - logger.log: "Boot fallback timeout reached. Sleeping for 30 minutes."
+      - deep_sleep.enter:
+          id: deep_sleep_1
+          sleep_duration: 30min
+
+esp32:
+  board: seeed_xiao_esp32c3
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_160: y
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
+
+logger:
+  level: INFO
+
+api:
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  use_address: 192.168.20.30
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  on_connect:
+    - logger.log: "Wi-Fi connected. Updating dashboard image."
+    - component.update: dashboard_image
+  ap:
+    ssid: "paper-fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: Europe/Berlin
+
+http_request:
+  verify_ssl: false
+  timeout: 60s
+  watchdog_timeout: 90s
+
+deep_sleep:
+  id: deep_sleep_1
+
+safe_mode:
+  disabled: true
+
+script:
+  - id: sleep_until_next_dashboard_update
+    mode: restart
+    then:
+      - if:
+          condition:
+            time.has_time:
+          then:
+            - logger.log: "Valid Home Assistant time available. Choosing next fixed dashboard update time."
+          else:
+            - logger.log: "Home Assistant time is not valid. Fallback sleep for 30 minutes."
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                sleep_duration: 30min
+
+      # Before 06:00 -> sleep until 06:00 today
+      - if:
+          condition:
+            lambda: |-
+              auto now = id(ha_time).now();
+              int minutes = now.hour * 60 + now.minute;
+              return minutes < (6 * 60);
+          then:
+            - logger.log: "Sleeping until 06:00."
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                until: "06:00:00"
+                time_id: ha_time
+
+      # Before 15:30 -> sleep until 15:30 today
+      - if:
+          condition:
+            lambda: |-
+              auto now = id(ha_time).now();
+              int minutes = now.hour * 60 + now.minute;
+              return minutes < (15 * 60 + 30);
+          then:
+            - logger.log: "Sleeping until 15:30."
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                until: "15:30:00"
+                time_id: ha_time
+
+      # Before 22:00 -> sleep until 22:00 today
+      - if:
+          condition:
+            lambda: |-
+              auto now = id(ha_time).now();
+              int minutes = now.hour * 60 + now.minute;
+              return minutes < (22 * 60);
+          then:
+            - logger.log: "Sleeping until 22:00."
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                until: "22:00:00"
+                time_id: ha_time
+
+      # After 22:00 -> sleep until 06:00 next day
+      - logger.log: "Sleeping until 06:00 next day."
+      - deep_sleep.enter:
+          id: deep_sleep_1
+          until: "06:00:00"
+          time_id: ha_time
+
+online_image:
+  - id: dashboard_image
+    url: "http://192.168.40.10:10000/seed-studio/e-ink-test?viewport=800x480&format=bmp&bmp_mode=binary&dithering=jarvis-judice-ninke&lang=en-GB"
+    format: BMP
+    type: BINARY
+    buffer_size: 16000
+    update_interval: never
+
+    on_download_finished:
+      - logger.log: "Dashboard image downloaded. Updating e-paper display."
+      - component.update: main_display
+      - delay: 20s
+      - script.execute: sleep_until_next_dashboard_update
+
+    on_error:
+      - logger.log: "Dashboard image download/decode failed. Sleeping for 30 minutes."
+      - delay: 10s
+      - deep_sleep.enter:
+          id: deep_sleep_1
+          sleep_duration: 30min
+
+spi:
+  clk_pin: GPIO8
+  mosi_pin: GPIO10
+
+font:
+  - file: "gfonts://Roboto"
+    id: f1
+    size: 20
+    glyphs: " !%()+-./0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+display:
+  - platform: waveshare_epaper
+    id: main_display
+    cs_pin: GPIO3
+    dc_pin: GPIO5
+    busy_pin:
+      number: GPIO4
+      inverted: true
+    reset_pin: GPIO2
+    model: 7.50inv2
+    update_interval: never
+    lambda: |-
+      if (id(dashboard_image).is_ready()) {
+        it.image(0, 0, id(dashboard_image));
+      }
