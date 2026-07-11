@@ -1,0 +1,17 @@
+services:
+  caddy:
+    image: ghcr.io/caddybuilds/caddy-cloudflare:latest
+    container_name: caddy
+    restart: unless-stopped
+    env_file:
+      - /etc/caddy/caddy.env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2019:2019"
+    volumes:
+      - /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/lib/caddy-data:/data
+      - /var/lib/caddy-config:/config
+      - /var/log/caddy:/var/log/caddy
+    command: caddy run --config /etc/caddy/Caddyfile

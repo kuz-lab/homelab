@@ -159,7 +159,7 @@ More detail: [HomeAssistant.md](HomeAssistant.md)
 
 Caddy runs in Docker (using [`caddy-cloudflare`](https://github.com/caddy-builds/caddy-cloudflare)) and handles TLS for all `*.kuzlab.dev` subdomains via Cloudflare DNS-01.
 
-Configuration: [Caddyfile](Caddy/Caddyfile)
+More detail: [Caddy.md](Caddy/Caddy.md)
 
 ### Remote Access
 
