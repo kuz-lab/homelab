@@ -4,7 +4,7 @@ A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VL
 
 This homelab runs 24/7 and serves as my real daily-use environment, not just a test setup.
 
-> **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 13 services · Wazuh SIEM · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
+> **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 15 services · Wazuh SIEM · Grafana + InfluxDB metrics · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
 > 📷 **[Physical setup and dashboard screenshots →](SETUP.md)**
 
@@ -132,11 +132,13 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 | VM 202 | Home Assistant OS | VM | Home automation, dashboards | 192.168.40.10 |
 | VM 200 | Wazuh | VM | SIEM — CVE detection, log collection (Ubuntu 24.04.4 LTS) | 192.168.40.19 |
 | VM 201 | UniFi OS Server | VM | Network controller for AP and switch | 192.168.40.18 |
+| CT 100 | Metrics (Grafana + InfluxDB) | LXC | Monitoring dashboards and time-series metrics (Docker) | 192.168.40.23 |
 | CT 101 | Gitea | LXC | Self-hosted Git | 192.168.40.14 |
 | CT 102 | AdGuard Home | LXC | Network-wide DNS filtering | 192.168.40.11 |
 | CT 103 | Paperless-ngx | LXC | Document management | 192.168.40.15 |
 | CT 104 | Node-RED | LXC | Automation flows | 192.168.40.16 |
 | CT 105 | Actual Budget | LXC | Personal finance tracking | 192.168.40.17 |
+| CT 106 | Immich | LXC | Self-hosted photo and video backup (Docker) | 192.168.40.24 |
 | CT 107 | Vaultwarden | LXC | Password manager | 192.168.40.13 |
 | CT 109 | Caddy | LXC | Reverse proxy (Docker, caddy-cloudflare) | 192.168.40.12 |
 | CT 112 | ntfy | LXC | Push notifications | 192.168.40.20 |
@@ -154,6 +156,12 @@ More detail: [HomeAssistant.md](HomeAssistant.md)
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
 ---
+
+### Photos
+
+Immich (CT 106) is my self-hosted replacement for cloud photo backup. It runs via Docker Compose using the official method, with the photo and video library bind-mounted from the Cubi SSD (`/mnt/pve/data1/immich`) rather than living inside the container. Accessible at `immich.kuzlab.dev`. The library is included in the offsite B2 sync, so photos follow the same 3-2-1 backup rule as everything else.
+
+More detail: [Immich.md](Immich/Immich.md)
 
 ### Reverse Proxy
 
@@ -184,6 +192,14 @@ Alerts go to ntfy via Dashboard Alerting monitors, and a daily digest summarizes
 - Wazuh flagged 120+ critical CVEs from an outdated kernel — resolved by upgrading to a supported HWE kernel.
 - The UniFi controller's Debian 12 base had unfixable CVEs piling up. Rebuilt it on clean Debian 13, brought the count to near zero.
 - Caught an OpenSSL vulnerability across multiple hosts. Patched and verified TLS was still working, no downtime.
+
+### Metrics and Dashboards
+
+A dedicated LXC (CT 100) runs Grafana and InfluxDB 2.x in Docker Compose. Home Assistant pushes ~55 entities into InfluxDB — energy, climate, TRV valve positions, temperatures, weather, air quality, and infrastructure health — while both Proxmox hosts report into a separate bucket. Grafana renders it all with Flux queries.
+
+This is separate from Wazuh on purpose: Wazuh answers "is anything insecure or broken?", the metrics stack answers "how is everything behaving over time?". Together they cover security and observability without overloading a single tool.
+
+More detail: [Metrics.md](Metrics/Metrics.md)
 
 ### Firewall Rules
 
@@ -228,6 +244,8 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - **Hypervisor:** Proxmox VE 9.x (both hosts)
 - **Firewall:** OPNsense 26.1.x
 - **Guest OS:** Debian 13, Ubuntu 24.04.4 LTS (Wazuh)
+- **Containers:** Docker Compose for service LXCs (Caddy, metrics, Immich)
+- **Observability:** Grafana + InfluxDB 2.x
 - **Provisioning:** Manual setup + [community scripts](https://community-scripts.github.io/ProxmoxVE/) for some containers
 
 ---
@@ -241,7 +259,8 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - Finish Cisco NetAcad Network Technician
 - Raspberry Pi 5 for PBS, secondary DNS, monitoring
 - UniFi Guest WiFi captive portal
-- Additional services: Immich, Stirling-PDF
+- InfluxDB downsampling tasks (hourly/daily retention buckets)
+- Additional services: Stirling-PDF
 
 ---
 
@@ -249,7 +268,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 
 This lab is part of a career transition into IT. I'm a Polish citizen based in Germany. Languages: Russian (native), Polish (C1), English (professional), German (basic).
 
-Everything here is built from scratch over the past year. It's both my daily-use environment and a learning platform — every decision here is something I can explain and defend.
+Everything here is built from scratch over the past year. It's both my daily-use environment and a learning platform.
 
 
 - **LinkedIn:** [kuzin-viacheslav](https://linkedin.com/in/kuzin-viacheslav)

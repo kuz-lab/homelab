@@ -136,3 +136,21 @@ kuma.kuzlab.dev {
         import common
         reverse_proxy 192.168.40.22:3001
 }
+
+grafana.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.23:3000
+}
+
+influx.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.23:8086
+}
+
+immich.kuzlab.dev {
+        import tls_cf
+        import common
+        reverse_proxy 192.168.40.24:2283
+}
