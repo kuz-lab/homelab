@@ -4,7 +4,7 @@ A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VL
 
 This homelab runs 24/7 and serves as my real daily-use environment, not just a test setup.
 
-> **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 15 services · Wazuh SIEM · Grafana + InfluxDB metrics · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
+> **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 17 services · Wazuh SIEM · layered monitoring (Uptime Kuma · Beszel · Grafana/InfluxDB 3) · Portainer + Homarr · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
 > 📷 **[Physical setup and dashboard screenshots →](SETUP.md)**
 
@@ -132,7 +132,7 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 | VM 202 | Home Assistant OS | VM | Home automation, dashboards | 192.168.40.10 |
 | VM 200 | Wazuh | VM | SIEM — CVE detection, log collection (Ubuntu 24.04.4 LTS) | 192.168.40.19 |
 | VM 201 | UniFi OS Server | VM | Network controller for AP and switch | 192.168.40.18 |
-| CT 100 | Metrics (Grafana + InfluxDB) | LXC | Monitoring dashboards and time-series metrics (Docker) | 192.168.40.23 |
+| CT 100 | Metrics (Grafana + InfluxDB 3) | LXC | Time-series metrics and dashboards (Docker) | 192.168.40.23 |
 | CT 101 | Gitea | LXC | Self-hosted Git | 192.168.40.14 |
 | CT 102 | AdGuard Home | LXC | Network-wide DNS filtering | 192.168.40.11 |
 | CT 103 | Paperless-ngx | LXC | Document management | 192.168.40.15 |
@@ -141,9 +141,11 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 | CT 106 | Immich | LXC | Self-hosted photo and video backup (Docker) | 192.168.40.24 |
 | CT 107 | Vaultwarden | LXC | Password manager | 192.168.40.13 |
 | CT 109 | Caddy | LXC | Reverse proxy (Docker, caddy-cloudflare) | 192.168.40.12 |
+| CT 110 | Portainer | LXC | Container management + PeaNUT (UPS) + Beszel hub (Docker) | 192.168.40.25 |
+| CT 111 | Homarr | LXC | Operational dashboard (Docker) | 192.168.40.26 |
 | CT 112 | ntfy | LXC | Push notifications | 192.168.40.20 |
-| CT 113 | Homepage | LXC | Dashboard | 192.168.40.21 |
-| CT 114 | Uptime Kuma | LXC | Service monitoring | 192.168.40.22 |
+| CT 113 | Homepage | LXC | Dashboard (being phased out — replaced by Homarr) | 192.168.40.21 |
+| CT 114 | Uptime Kuma | LXC | Uptime/reachability monitoring | 192.168.40.22 |
 
 ---
 
@@ -173,6 +175,20 @@ More detail: [Caddy.md](Caddy/Caddy.md)
 
 Tailscale runs on OPNsense via the os-tailscale plugin with advertised routes for all VLANs. Full remote access without exposing anything to the public internet. Not required for local administration — daily use goes through Caddy, recovery uses direct firewall rules.
 
+### Dashboards
+
+Homarr (CT 111) is the main dashboard now. One page with live widgets for Proxmox, OPNsense, AdGuard, UniFi, Immich, Paperless, the UPS, and the monitoring tools. It talks to each service over the internal network, so the tiles show real data, not just links.
+
+Homepage (CT 113) was the first dashboard and still runs. Homarr covers everything it did plus live container stats, so Homepage is on its way out — I just haven't pulled it yet because a few things (a Caddy admin-API firewall rule, some monitors) still point at it.
+
+### Container Management
+
+Each LXC runs its own Docker daemon, so no single socket sees everything. Portainer (CT 110) fixes that with an agent on every Docker LXC — one login to see and manage all of them.
+
+Nothing gets raw access to another container's Docker socket. Everything goes through a socket proxy (`linuxserver/socket-proxy`) locked down to start/stop/restart only — no create, no delete, read-only mount. So Homarr and Portainer can show stats and bounce a container, but can't do anything destructive through the socket.
+
+The same LXC also runs PeaNUT, a small web UI for the UPS, and the Beszel hub for host monitoring.
+
 [↑ top](#kuzlabdev--home-infrastructure-lab)
 
 ---
@@ -193,13 +209,25 @@ Alerts go to ntfy via Dashboard Alerting monitors, and a daily digest summarizes
 - The UniFi controller's Debian 12 base had unfixable CVEs piling up. Rebuilt it on clean Debian 13, brought the count to near zero.
 - Caught an OpenSSL vulnerability across multiple hosts. Patched and verified TLS was still working, no downtime.
 
-### Metrics and Dashboards
+### Metrics
 
-A dedicated LXC (CT 100) runs Grafana and InfluxDB 2.x in Docker Compose. Home Assistant pushes ~55 entities into InfluxDB — energy, climate, TRV valve positions, temperatures, weather, air quality, and infrastructure health — while both Proxmox hosts report into a separate bucket. Grafana renders it all with Flux queries.
+A dedicated LXC (CT 100) runs Grafana and InfluxDB 3 Enterprise in Docker Compose. Home Assistant pushes ~55 entities into it — energy, climate, TRV valve positions, temperatures, weather, air quality, and infrastructure health — and both Proxmox hosts report in too. There are two databases, one for Home Assistant and one for Proxmox. Grafana reads them over SQL.
 
-This is separate from Wazuh on purpose: Wazuh answers "is anything insecure or broken?", the metrics stack answers "how is everything behaving over time?". Together they cover security and observability without overloading a single tool.
+I actually started on InfluxDB 2.x and moved to 3 a few days later, while I only had about five days of data — so it was a clean cutover, no messy parallel run. The main trade-off: v3 dropped the built-in task engine for downsampling, so if I want long-term rollups later I'll need an external scheduler.
 
 More detail: [Metrics.md](Metrics/Metrics.md)
+
+### How the monitoring layers fit
+
+I run a few monitoring tools and they each answer a different question, so they don't really overlap:
+
+- **Uptime Kuma** (CT 114) — is it up? 17+ checks, all pinging ntfy when something drops.
+- **Beszel** (hub on CT 110, agents on both Proxmox hosts) — host vitals: CPU, RAM, disk, temps, per-host Docker stats, with history.
+- **Grafana + InfluxDB 3** (CT 100) — the deep history: energy and climate trends over weeks and months.
+- **Wazuh** (VM 200) — the security layer: file integrity, CVE detection, agent health.
+- **Homarr** (CT 111) — the single pane that pulls all of it together.
+
+Beszel agents live on the Proxmox hosts themselves, not in an LXC, because they need to see the real hardware — actual CPU temperature instead of a value passed through Home Assistant.
 
 ### Firewall Rules
 
@@ -233,6 +261,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 | WiFi AP | UniFi U7 Lite | Wi-Fi 7, three SSIDs |
 | UPS | Eaton Ellipse PRO 650 | Full stack power protection |
 | Zigbee/Thread | SMLIGHT SLZB-MR5U | PoE coordinator, VLAN 40 |
+| Rack | Waveshare HomeRack 10-inch (7U) | Switch, patch panel, modem, Cubi, PDU |
 | Planned | Raspberry Pi 5 (8 GB) | PBS, secondary DNS, monitoring, Tailscale failover |
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)
@@ -243,24 +272,26 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 
 - **Hypervisor:** Proxmox VE 9.x (both hosts)
 - **Firewall:** OPNsense 26.1.x
-- **Guest OS:** Debian 13, Ubuntu 24.04.4 LTS (Wazuh)
-- **Containers:** Docker Compose for service LXCs (Caddy, metrics, Immich)
-- **Observability:** Grafana + InfluxDB 2.x
+- **Guest OS:** Debian 13, Ubuntu 24.04 (Wazuh)
+- **Containers:** Docker Compose for service LXCs (Caddy, metrics, Immich, Paperless, and others), each behind a locked-down socket proxy
+- **Metrics:** Grafana + InfluxDB 3 Enterprise
+- **Monitoring:** Uptime Kuma (reachability), Beszel (host vitals)
+- **Container management:** Portainer CE with an agent per Docker LXC
+- **Dashboard:** Homarr
 - **Provisioning:** Manual setup + [community scripts](https://community-scripts.github.io/ProxmoxVE/) for some containers
 
 ---
 
 ## Roadmap
 
-- Backup restore drill documentation
-- Firewall access model review and case study
-- Detection and triage case studies
-- Proxmox WebAuthn passkeys
 - Finish Cisco NetAcad Network Technician
-- Raspberry Pi 5 for PBS, secondary DNS, monitoring
-- UniFi Guest WiFi captive portal
-- InfluxDB downsampling tasks (hourly/daily retention buckets)
-- Additional services: Stirling-PDF
+- CompTIA Security+ (SY0-701), Aug/Sep 2026
+- Raspberry Pi 5 as a second node — Proxmox Backup Server, backup DNS, Tailscale failover, its own Uptime Kuma
+- Homarr phase 2 — custom theme, embedded Grafana and Kuma panels, a few custom widgets
+- Retire Homepage once everything points at Homarr
+- Downsampling for InfluxDB 3 — needs an external scheduler since v3 dropped the built-in task engine
+- Update automation — Diun for image update notices, unattended-upgrades for OS patches
+- Stirling-PDF, and a DIY Siedle intercom over ESP32/ESPHome
 
 ---
 

@@ -1,3 +1,7 @@
+# /etc/metrics/ stack: Grafana + the legacy InfluxDB 2.x container.
+# InfluxDB 2.x is STOPPED — kept as a fallback reference only. Live metrics
+# now run on InfluxDB 3 Enterprise from the separate /etc/influxdb3/ stack.
+# Grafana below connects to InfluxDB 3 over SQL (Flight SQL/gRPC).
 services:
   influxdb:
     image: influxdb:2.9.1

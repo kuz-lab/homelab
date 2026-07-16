@@ -1,0 +1,24 @@
+# InfluxDB 3 Enterprise (Home license) — deployed as a Portainer Stack, not an /etc file.
+# Live metrics database. Grafana (see docker-compose.yml) reads this over SQL.
+services:
+  influxdb3:
+    image: influxdb:3-enterprise
+    container_name: influxdb3
+    ports:
+      - "8181:8181"
+    command:
+      - influxdb3
+      - serve
+      - --node-id=metrics-node0
+      - --cluster-id=homelab
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --plugin-dir=/var/lib/influxdb3/plugins
+      - --license-type=home
+    environment:
+      # Set to your own address on the host; kept out of the public repo.
+      - INFLUXDB3_ENTERPRISE_LICENSE_EMAIL=${INFLUXDB3_LICENSE_EMAIL}
+    volumes:
+      - /opt/influxdb3/data:/var/lib/influxdb3/data
+      - /opt/influxdb3/plugins:/var/lib/influxdb3/plugins
+    restart: unless-stopped
