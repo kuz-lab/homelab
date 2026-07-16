@@ -132,20 +132,22 @@ Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscal
 | VM 202 | Home Assistant OS | VM | Home automation, dashboards | 192.168.40.10 |
 | VM 200 | Wazuh | VM | SIEM — CVE detection, log collection (Ubuntu 24.04.4 LTS) | 192.168.40.19 |
 | VM 201 | UniFi OS Server | VM | Network controller for AP and switch | 192.168.40.18 |
-| CT 100 | Metrics (Grafana + InfluxDB 3) | LXC | Time-series metrics and dashboards (Docker) | 192.168.40.23 |
-| CT 101 | Gitea | LXC | Self-hosted Git | 192.168.40.14 |
-| CT 102 | AdGuard Home | LXC | Network-wide DNS filtering | 192.168.40.11 |
-| CT 103 | Paperless-ngx | LXC | Document management | 192.168.40.15 |
-| CT 104 | Node-RED | LXC | Automation flows | 192.168.40.16 |
-| CT 105 | Actual Budget | LXC | Personal finance tracking | 192.168.40.17 |
-| CT 106 | Immich | LXC | Self-hosted photo and video backup (Docker) | 192.168.40.24 |
-| CT 107 | Vaultwarden | LXC | Password manager | 192.168.40.13 |
-| CT 109 | Caddy | LXC | Reverse proxy (Docker, caddy-cloudflare) | 192.168.40.12 |
-| CT 110 | Portainer | LXC | Container management + PeaNUT (UPS) + Beszel hub (Docker) | 192.168.40.25 |
-| CT 111 | Homarr | LXC | Operational dashboard (Docker) | 192.168.40.26 |
-| CT 112 | ntfy | LXC | Push notifications | 192.168.40.20 |
-| CT 113 | Homepage | LXC | Dashboard (being phased out — replaced by Homarr) | 192.168.40.21 |
-| CT 114 | Uptime Kuma | LXC | Uptime/reachability monitoring | 192.168.40.22 |
+| CT 100 | Metrics (Grafana + InfluxDB 3) | LXC · Docker | Time-series metrics and dashboards | 192.168.40.23 |
+| CT 101 | Gitea | LXC · native | Self-hosted Git | 192.168.40.14 |
+| CT 102 | AdGuard Home | LXC · native | Network-wide DNS filtering | 192.168.40.11 |
+| CT 103 | Paperless-ngx | LXC · Docker | Document management | 192.168.40.15 |
+| CT 104 | Node-RED | LXC · Docker | Automation flows | 192.168.40.16 |
+| CT 105 | Actual Budget | LXC · Docker | Personal finance tracking | 192.168.40.17 |
+| CT 106 | Immich | LXC · Docker | Self-hosted photo and video backup | 192.168.40.24 |
+| CT 107 | Vaultwarden | LXC · Docker | Password manager | 192.168.40.13 |
+| CT 109 | Caddy | LXC · Docker | Reverse proxy (caddy-cloudflare) | 192.168.40.12 |
+| CT 110 | Portainer | LXC · Docker | Container management + PeaNUT (UPS) + Beszel hub | 192.168.40.25 |
+| CT 111 | Homarr | LXC · Docker | Operational dashboard | 192.168.40.26 |
+| CT 112 | ntfy | LXC · native | Push notifications | 192.168.40.20 |
+| CT 113 | Homepage | LXC · Docker | Dashboard (being phased out — replaced by Homarr) | 192.168.40.21 |
+| CT 114 | Uptime Kuma | LXC · native | Uptime/reachability monitoring | 192.168.40.22 |
+
+Docker-based LXCs each run their own Docker daemon behind a locked-down socket proxy, managed from Portainer. The rest (Gitea, AdGuard, ntfy, Uptime Kuma) are native community-script installs.
 
 ---
 

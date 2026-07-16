@@ -34,11 +34,31 @@ Keyboard is a Logitech MX Keys S, mouse is an MX Master 3S, both on Logi Bolt.
 
 ## Dashboards
 
+### Homarr
+
+![Homarr dashboard — one pane with Uptime Kuma, both Proxmox hosts, all Docker containers, OPNsense traffic, AdGuard, UPS, and app tiles](screenshots/Homarr.png)
+
+The main dashboard now. One page pulling live data from everything: uptime status, both Proxmox hosts (CPU, RAM, VMs, LXCs), all 21 Docker containers, OPNsense traffic, AdGuard blocking, and the UPS — plus quick tiles and widgets for each service, a calendar, and the weather. This is what I actually open day to day.
+
 ### Homepage
 
 ![Homepage dashboard showing network status, infrastructure health, service links](screenshots/Homepage.png)
 
-The main entry point for daily use. Top section shows WAN status, OPNsense stats, UniFi clients, and AdGuard filtering numbers. Infrastructure row shows both Proxmox hosts, Caddy upstreams, and Uptime Kuma status. Bottom section has quick links to all services and external tools.
+My first dashboard, still running. Top section shows WAN status, OPNsense stats, UniFi clients, and AdGuard filtering numbers. Infrastructure row shows both Proxmox hosts, Caddy upstreams, and Uptime Kuma status. Bottom section has quick links to all services.
+
+Homarr now covers all of this with live widgets on top, so Homepage will probably get retired in full once the last few things (a Caddy firewall rule, some monitors) stop pointing at it.
+
+### Grafana
+
+![Grafana energy dashboard — current, average and peak power, daily and weekly energy, average power by hour](screenshots/Grafana_Proxmox.png)
+
+Grafana sitting on top of InfluxDB 3, here showing the homelab's power use — current draw, peak hour, energy per day/week/month, and average power by hour. Home Assistant and both Proxmox hosts feed the data.
+
+### Portainer
+
+![Portainer environments list — one agent per Docker LXC with stacks, containers and resource counts](screenshots/Portainer.png)
+
+Portainer with an agent on each Docker LXC, so every container across all of them shows up in one place — metrics, Immich, Paperless, Caddy, Homepage, Homarr, and the rest. I can start, stop, or check any of them without SSHing into nine separate containers.
 
 ### Proxmox — Cubi (services host)
 
