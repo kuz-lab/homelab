@@ -6,7 +6,7 @@ Physical hardware, workspace, and the dashboards that run on top of it.
 
 ## Rack
 
-Waveshare 10-inch mini rack, 8U. Everything fits in one compact unit — modem, patch panel, switch, NUC, and space reserved for a Raspberry Pi 5. The Eaton UPS sits beside it.
+Waveshare HomeRack 8U, 10-inch. Everything fits in one unit — modem, patch panel, switch, NUC, and space reserved for a Raspberry Pi 5. The Eaton UPS sits beside it.
 
 ### Front
 
@@ -44,7 +44,7 @@ The main entry point for daily use. Top section shows WAN status, OPNsense stats
 
 ![Proxmox Cubi — all VMs and LXCs listed in the sidebar, shell open](screenshots/ProxmoxCubi.png)
 
-The main services host. All 10 LXCs and 4 VMs visible in the sidebar. Task log at the bottom shows recent backup jobs and console sessions.
+The main services host. All the LXCs and VMs visible in the sidebar. Task log at the bottom shows recent backup jobs and console sessions.
 
 ### Proxmox — ZimaBoard (edge host)
 
@@ -62,7 +62,7 @@ Home Assistant dashboard showing both Proxmox hosts (Cubi and ZimaBoard) with CP
 
 ![OPNsense Lobby](screenshots/OPNsense.png)
 
-OPNsense dashboard — interfaces, traffic graphs, firewall log, and running services."
+OPNsense dashboard — interfaces, traffic graphs, firewall log, and running services.
 
 ### Uptime Kuma
 

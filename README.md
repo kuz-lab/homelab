@@ -261,7 +261,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 | WiFi AP | UniFi U7 Lite | Wi-Fi 7, three SSIDs |
 | UPS | Eaton Ellipse PRO 650 | Full stack power protection |
 | Zigbee/Thread | SMLIGHT SLZB-MR5U | PoE coordinator, VLAN 40 |
-| Rack | Waveshare HomeRack 10-inch (7U) | Switch, patch panel, modem, Cubi, PDU |
+| Rack | Waveshare HomeRack 8U, 10-inch | Switch, patch panel, modem, Cubi, PDU |
 | Planned | Raspberry Pi 5 (8 GB) | PBS, secondary DNS, monitoring, Tailscale failover |
 
 [↑ top](#kuzlabdev--home-infrastructure-lab)

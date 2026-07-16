@@ -1,7 +1,6 @@
 # Home Assistant
 
-Home Assistant OS runs as VM 202 on Cubi (192.168.40.10), handling automations, 
-dashboards, and integration with ESPHome-flashed devices on the IoT VLAN.
+Home Assistant OS runs as VM 202 on Cubi (192.168.40.10), handling automations, dashboards, and the ESPHome-flashed devices on the IoT VLAN.
 
 ## Devices
 

@@ -8,7 +8,7 @@ It runs in its own LXC on my Cubi host. The container has one simple job: run th
 
 When I first bought a domain to make my services easier to access, my first attempt at a reverse proxy was Nginx Proxy Manager. I thought a GUI would make things easy, but after a few frustrating and failed attempts, I gave up. I searched for an alternative, found Caddy, followed a basic forum tutorial, and it worked immediately. No fighting a GUI, just simple configuration. Over time, my Caddyfile evolved based on official docs and community forums.
 
-## The Journey & Lessons Learned
+## What broke along the way
 
 My setup evolved through trial and error. The initial installation was native Caddy with the Cloudflare module compiled in. It broke completely after the first `apt upgrade` — the plugin didn't survive. 
 
@@ -18,7 +18,7 @@ That pushed me to rethink the whole approach.
 
 ## Current Setup
 
-Today, everything runs smoothly via Docker Compose using the `ghcr.io/caddybuilds/caddy-cloudflare:latest` image. It's just one `.yml` file — much easier to update and version control.
+Today it all runs via Docker Compose using the `ghcr.io/caddybuilds/caddy-cloudflare:latest` image. It's just one `.yml` file — much easier to update and keep in version control.
 
 The key files are:
 - [`Caddyfile`](Caddyfile) — reverse proxy rules
