@@ -4,6 +4,19 @@ A self-hosted infrastructure environment built on Proxmox, OPNsense, and five-VL
 
 This homelab runs 24/7 and serves as my real daily-use environment, not just a test setup.
 
+## Lab Journal
+
+| Date | What changed |
+|------|-------------|
+| Jul 2026 | Migrated all 13 Docker services to Portainer Git-based stacks — compose files versioned in Gitea, one-click redeploy on push |
+| Jul 2026 | Added service documentation for every container — volumes, env vars, operational notes |
+| Jul 2026 | Node-RED adminAuth, Uptime Kuma monitors for 5 new services, backup tier audit |
+| Jun 2026 | InfluxDB 2 → 3 Enterprise clean cutover, Grafana rebuilt on SQL datasources |
+| Jun 2026 | Wazuh SIEM deployment — agents on all hosts, daily CVE digest via ntfy |
+| May 2026 | Five-VLAN network segmentation, OPNsense moved to dedicated ZimaBoard |
+
+---
+
 > **At a glance:** Two Proxmox hosts · five VLANs · OPNsense firewall · 17 services · Wazuh SIEM · layered monitoring (Uptime Kuma · Beszel · Grafana/InfluxDB 3) · Portainer + Homarr · Caddy reverse proxy · Tailscale remote access · UPS with automated shutdown · off-site backups
 
 > 📷 **[Physical setup and dashboard screenshots →](SETUP.md)**
@@ -187,6 +200,8 @@ Homepage (CT 113) was the first dashboard and still runs. Homarr covers everythi
 
 Each LXC runs its own Docker daemon, so no single socket sees everything. Portainer (CT 110) fixes that with an agent on every Docker LXC — one login to see and manage all of them.
 
+All Docker services run as Portainer Git stacks linked to a private Gitea repo. Compose files are edited locally or via Gitea's web UI, pushed, and redeployed from Portainer with one click. Secrets stay in Portainer's environment variables — never in Git.
+
 Nothing gets raw access to another container's Docker socket. Everything goes through a socket proxy (`linuxserver/socket-proxy`) locked down to start/stop/restart only — no create, no delete, read-only mount. So Homarr and Portainer can show stats and bounce a container, but can't do anything destructive through the socket.
 
 The same LXC also runs PeaNUT, a small web UI for the UPS, and the Beszel hub for host monitoring.
@@ -278,7 +293,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - **Containers:** Docker Compose for service LXCs (Caddy, metrics, Immich, Paperless, and others), each behind a locked-down socket proxy
 - **Metrics:** Grafana + InfluxDB 3 Enterprise
 - **Monitoring:** Uptime Kuma (reachability), Beszel (host vitals)
-- **Container management:** Portainer CE with an agent per Docker LXC
+- **Container management:** Portainer CE with Git-based stacks (Gitea) and an agent per Docker LXC
 - **Dashboard:** Homarr
 - **Provisioning:** Manual setup + [community scripts](https://community-scripts.github.io/ProxmoxVE/) for some containers
 
