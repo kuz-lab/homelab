@@ -8,6 +8,8 @@ This homelab runs 24/7 and serves as my real daily-use environment, not just a t
 
 | Date | What changed |
 |------|-------------|
+| Jul 2026 | OPNsense 26.1 → 26.7 major upgrade (FreeBSD 15.1) — snapshot-backed, no issues |
+| Jul 2026 | Started Ansible, working through the official docs — key-based inventory of all 17 hosts, first fleet-audit playbook (OS, disk, pending updates in one run) |
 | Jul 2026 | Migrated all 13 Docker services to Portainer Git-based stacks — compose files versioned in Gitea, one-click redeploy on push |
 | Jul 2026 | Added service documentation for every container — volumes, env vars, operational notes |
 | Jul 2026 | Node-RED adminAuth, Uptime Kuma monitors for 5 new services, backup tier audit |
@@ -34,7 +36,7 @@ Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw PPP
 
 OPNsense runs on its own host so that a failure on the main services machine doesn't take down the entire network. Before this split, everything lived on one NUC — a single point of failure for the whole stack.
 
-Tailscale runs on OPNsense via the os-tailscale plugin, advertising all five VLANs. This means remote access keeps working even if the services host goes down — I can still reach OPNsense, diagnose the problem, and bring things back up.
+Tailscale runs on OPNsense via the os-tailscale plugin, advertising all five VLANs, with tailnet ACL grants restricting remote access to the same entry points as local access: bastion SSH (cubi/zima), Caddy HTTPS, AdGuard DNS, and the OPNsense WebGUI. Remote access keeps working even if the services host goes down — I can still reach OPNsense, diagnose the problem, and bring things back up.
 
 A UniFi USW-Lite-8-PoE switch distributes tagged traffic across VLANs. A UniFi U7 Lite AP maps three SSIDs to Trusted, IoT, and Guest networks.
 
@@ -88,13 +90,13 @@ Inter-VLAN traffic is denied by default (RFC1918 block on every interface). All 
 
 ### Firewall Policy
 
-- **Trusted → Servers:** Caddy HTTPS, AdGuard DNS, Wazuh agent, HAOS
+- **Trusted → Servers:** Caddy HTTPS, AdGuard DNS, Wazuh agent, HAOS — no SSH (all fleet SSH goes via the cubi bastion)
 - **Trusted → IoT:** Full access for device admin, AirPlay, Sonos
-- **Trusted → Management:** SSH and WebGUI to Proxmox/OPNsense (MacBook only, for recovery)
+- **Trusted → Management:** SSH to Proxmox hosts (MacBook only — cubi is the bastion entry, zima is firewall-host recovery) + WebGUI to Proxmox/OPNsense
 - **IoT → Servers:** Narrow callbacks to HAOS only (Sonos, Music Assistant, ESPHome)
 - **Servers (HAOS) → IoT:** Device polling (ESPHome, miio, Shelly, Sonos)
 - **Servers → Management:** UniFi controller, Caddy→Proxmox reverse proxy, monitoring, HAOS→Proxmox (Samba, NUT, sensors)
-- **Management → Servers:** AP→UniFi controller, Proxmox→ntfy webhooks, Proxmox→HAOS CPU temp sensors
+- **Management → Servers:** cubi→Servers SSH (bastion ProxyJump relay), AP→UniFi controller, Proxmox→ntfy webhooks, Proxmox→HAOS CPU temp sensors
 - **IoT → Trusted / Management:** Blocked
 - **Guest → everything internal:** Blocked
 
@@ -115,15 +117,16 @@ No fallback DNS for clients — if AdGuard goes down, DNS fails visibly rather t
 
 ### Access Model
 
-Daily use goes through Caddy reverse proxy. Remote access uses Tailscale. Infrastructure management addresses are restricted — only the MacBook has direct firewall rules to reach Proxmox and OPNsense for local recovery. A dedicated VLAN 99 switch port provides physical break-glass access when routing is down.
+Daily use goes through Caddy reverse proxy. All fleet SSH goes through the cubi bastion via ProxyJump — private keys exist only on the MacBook (passphrase-encrypted, served by the macOS Keychain agent), cubi just relays TCP and holds no keys. Password SSH is disabled fleet-wide, and root SSH is disabled on all LXCs and VMs: interactive access is a non-root `slava` user, automation is a non-root `ansible` user, both with sudo (managed by the Ansible `common` role). Only the Proxmox hosts retain key-only root SSH, since PVE tooling assumes it. Remote access uses Tailscale, locked down with ACL grants to the same entry points as local access (bastion SSH, Caddy HTTPS, AdGuard DNS). A dedicated VLAN 99 switch port provides physical break-glass access when routing is down. Full detail: [SSH_ACCESS_MODEL.md](SSH_ACCESS_MODEL.md).
 
 | Scenario | Path |
 |----------|------|
 | Daily service access | Caddy via \*.kuzlab.dev |
-| Remote access | Tailscale → Caddy or direct IP |
+| Fleet SSH (local & remote) | MacBook → cubi (bastion) → host, via ProxyJump (`ssh caddy`) |
+| Remote access | Tailscale (ACL grants: cubi/zima SSH, Caddy 443, AdGuard DNS, OPNsense GUI) |
 | Proxmox daily use | Caddy via cubi.kuzlab.dev / zima.kuzlab.dev |
+| Shell in a container (from Proxmox) | `pct enter <id>` — no SSH, no keys needed |
 | Local recovery | MacBook → direct Proxmox/OPNsense IP (firewall rule) |
-| Emergency SSH | MacBook → Proxmox Cubi (bastion) |
 | Break-glass | Cable to VLAN 99 switch port, static IP, no routing needed |
 
 Each layer removes a dependency. Tailscale needs WAN, OPNsense, and the Tailscale service all working. The local firewall rule just needs OPNsense routing. The break-glass port only needs the switch to be powered — no routing, no software, just a cable.
@@ -188,7 +191,7 @@ More detail: [Caddy.md](Caddy/Caddy.md)
 
 ### Remote Access
 
-Tailscale runs on OPNsense via the os-tailscale plugin with advertised routes for all VLANs. Full remote access without exposing anything to the public internet. Not required for local administration — daily use goes through Caddy, recovery uses direct firewall rules.
+Tailscale runs on OPNsense via the os-tailscale plugin with advertised routes for all VLANs, restricted by tailnet ACL grants to the bastion (SSH), Caddy (HTTPS), AdGuard (DNS), and OPNsense WebGUI — remote follows the same access model as local. Nothing is exposed to the public internet. Not required for local administration — daily use goes through Caddy, recovery uses direct firewall rules.
 
 ### Dashboards
 
@@ -288,7 +291,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 ## Software
 
 - **Hypervisor:** Proxmox VE 9.x (both hosts)
-- **Firewall:** OPNsense 26.1.x
+- **Firewall:** OPNsense 26.7
 - **Guest OS:** Debian 13, Ubuntu 24.04 (Wazuh)
 - **Containers:** Docker Compose for service LXCs (Caddy, metrics, Immich, Paperless, and others), each behind a locked-down socket proxy
 - **Metrics:** Grafana + InfluxDB 3 Enterprise
@@ -296,6 +299,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - **Container management:** Portainer CE with Git-based stacks (Gitea) and an agent per Docker LXC
 - **Dashboard:** Homarr
 - **Provisioning:** Manual setup + [community scripts](https://community-scripts.github.io/ProxmoxVE/) for some containers
+- **Automation:** Ansible, early stage — inventory covering every host, fleet audit playbook; playbooks live in a private Gitea repo
 
 ---
 
@@ -307,6 +311,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - Homarr phase 2 — custom theme, embedded Grafana and Kuma panels, a few custom widgets
 - Retire Homepage once everything points at Homarr
 - Downsampling for InfluxDB 3 — needs an external scheduler since v3 dropped the built-in task engine
+- Ansible rollout, step by step — baseline config role, one-command fleet patching, later LXC provisioning via the Proxmox API
 - Update automation — Diun for image update notices, unattended-upgrades for OS patches
 - Stirling-PDF, and a DIY Siedle intercom over ESP32/ESPHome
 
