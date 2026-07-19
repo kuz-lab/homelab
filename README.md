@@ -8,6 +8,7 @@ This homelab runs 24/7 and serves as my real daily-use environment, not just a t
 
 | Date | What changed |
 |------|-------------|
+| Jul 2026 | SSH access rebuild — one bastion door (ProxyJump), non-root users fleet-wide via Ansible, password and root SSH disabled on all hosts, Tailscale locked to the same entry points |
 | Jul 2026 | OPNsense 26.1 → 26.7 major upgrade (FreeBSD 15.1) — snapshot-backed, no issues |
 | Jul 2026 | Started Ansible, working through the official docs — key-based inventory of all 17 hosts, first fleet-audit playbook (OS, disk, pending updates in one run) |
 | Jul 2026 | Migrated all 13 Docker services to Portainer Git-based stacks — compose files versioned in Gitea, one-click redeploy on push |
@@ -36,7 +37,7 @@ Traffic enters through a DrayTek Vigor 167 modem in bridge mode, passing raw PPP
 
 OPNsense runs on its own host so that a failure on the main services machine doesn't take down the entire network. Before this split, everything lived on one NUC — a single point of failure for the whole stack.
 
-Tailscale runs on OPNsense via the os-tailscale plugin, advertising all five VLANs, with tailnet ACL grants restricting remote access to the same entry points as local access: bastion SSH (cubi/zima), Caddy HTTPS, AdGuard DNS, and the OPNsense WebGUI. Remote access keeps working even if the services host goes down — I can still reach OPNsense, diagnose the problem, and bring things back up.
+Tailscale runs on OPNsense via the os-tailscale plugin and advertises all five VLANs — but its access policy only allows the same few doors I use locally: SSH to the bastion, HTTPS to Caddy, DNS to AdGuard, and the OPNsense WebGUI. Being remote doesn't grant more access than sitting at home. And because Tailscale lives on the firewall host, remote access keeps working even if the services machine goes down — I can still reach OPNsense, diagnose, and bring things back up.
 
 A UniFi USW-Lite-8-PoE switch distributes tagged traffic across VLANs. A UniFi U7 Lite AP maps three SSIDs to Trusted, IoT, and Guest networks.
 
@@ -117,7 +118,11 @@ No fallback DNS for clients — if AdGuard goes down, DNS fails visibly rather t
 
 ### Access Model
 
-Daily use goes through Caddy reverse proxy. All fleet SSH goes through the cubi bastion via ProxyJump — private keys exist only on the MacBook (passphrase-encrypted, served by the macOS Keychain agent), cubi just relays TCP and holds no keys. Password SSH is disabled fleet-wide, and root SSH is disabled on all LXCs and VMs: interactive access is a non-root `slava` user, automation is a non-root `ansible` user, both with sudo (managed by the Ansible `common` role). Only the Proxmox hosts retain key-only root SSH, since PVE tooling assumes it. Remote access uses Tailscale, locked down with ACL grants to the same entry points as local access (bastion SSH, Caddy HTTPS, AdGuard DNS). A dedicated VLAN 99 switch port provides physical break-glass access when routing is down. Full detail: [SSH_ACCESS_MODEL.md](SSH_ACCESS_MODEL.md).
+Daily use goes through the Caddy reverse proxy. For administration, there is exactly one SSH door: every connection goes from my MacBook through the cubi Proxmox host acting as a bastion (SSH ProxyJump). The bastion holds no keys — it only relays the connection, so even a compromised bastion can't reach the fleet on its own. Private keys exist in one place: on the MacBook, passphrase-encrypted, unlocked by the macOS Keychain agent.
+
+On the hosts, password login is disabled everywhere, and root login is disabled on every container and VM — day-to-day access is a regular user with sudo, and automation uses its own separate user and key. An Ansible role manages all of it. Only the two Proxmox hosts keep root SSH (key-only), because Proxmox tooling expects it.
+
+The result in practice: `ssh caddy` just works — no IPs, no passwords, no prompts — while the firewall, the Tailscale policy, and the SSH daemons all enforce the same single-door model. Full detail: [SSH_ACCESS_MODEL.md](SSH_ACCESS_MODEL.md).
 
 | Scenario | Path |
 |----------|------|
@@ -191,7 +196,7 @@ More detail: [Caddy.md](Caddy/Caddy.md)
 
 ### Remote Access
 
-Tailscale runs on OPNsense via the os-tailscale plugin with advertised routes for all VLANs, restricted by tailnet ACL grants to the bastion (SSH), Caddy (HTTPS), AdGuard (DNS), and OPNsense WebGUI — remote follows the same access model as local. Nothing is exposed to the public internet. Not required for local administration — daily use goes through Caddy, recovery uses direct firewall rules.
+Tailscale on OPNsense provides remote access without exposing anything to the public internet. Its access policy mirrors the local firewall: bastion SSH, Caddy HTTPS, AdGuard DNS, OPNsense WebGUI — nothing else. The policy file includes automatic tests, so a config change that would accidentally re-open direct SSH to the fleet refuses to save. Local administration doesn't depend on Tailscale at all.
 
 ### Dashboards
 
@@ -299,7 +304,7 @@ Backups follow a 3-2-1 approach for critical services: three copies, two media t
 - **Container management:** Portainer CE with Git-based stacks (Gitea) and an agent per Docker LXC
 - **Dashboard:** Homarr
 - **Provisioning:** Manual setup + [community scripts](https://community-scripts.github.io/ProxmoxVE/) for some containers
-- **Automation:** Ansible, early stage — inventory covering every host, fleet audit playbook; playbooks live in a private Gitea repo
+- **Automation:** Ansible — inventory of all 17 hosts, fleet audit playbook, and a `common` role that manages users, SSH keys, and sudo across the fleet; playbooks live in a private Gitea repo
 
 ---
 
