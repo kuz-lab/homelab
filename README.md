@@ -8,6 +8,7 @@ This homelab runs 24/7 and serves as my real daily-use environment, not just a t
 
 | Date | What changed |
 |------|-------------|
+| Aug 2026 | Remote VR streaming over the internet — traced three separate NAT and firewall faults on OPNsense that each looked like a carrier problem ([write-up](https://kuz-lab.github.io/homelab/virtual-desktop-remote-access.html)) |
 | Jul 2026 | SSH access rebuild — one bastion door (ProxyJump), non-root users fleet-wide via Ansible, password and root SSH disabled on all hosts, Tailscale locked to the same entry points |
 | Jul 2026 | OPNsense 26.1 → 26.7 major upgrade (FreeBSD 15.1) — snapshot-backed, no issues |
 | Jul 2026 | Started Ansible, working through the official docs — key-based inventory of all 17 hosts, first fleet-audit playbook (OS, disk, pending updates in one run) |
@@ -24,7 +25,7 @@ This homelab runs 24/7 and serves as my real daily-use environment, not just a t
 
 > 📷 **[Physical setup and dashboard screenshots →](SETUP.md)**
 
-Troubleshooting notes: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Troubleshooting notes: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) · [Remote VR streaming through OPNsense →](https://kuz-lab.github.io/homelab/virtual-desktop-remote-access.html)
 
 
 [Architecture](#architecture) · [Network](#network-design) · [Services](#services) · [Security](#security-and-monitoring) · [Backups](#backups) · [Hardware](#hardware) · [Roadmap](#roadmap)

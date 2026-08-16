@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remote Virtual Desktop — kuzlab.dev</title>
+<meta name="description" content="Setting up and debugging remote Meta Quest 3 access to Virtual Desktop on a MacBook through OPNsense.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body, h1, h2, h3, h4, p, ul, ol, dl, dd, figure, pre { margin: 0; padding: 0; }
+  img, svg { max-width: 100%; }
+  :root {
+    --ground: #F3F5F7;
+    --surface: #FFFFFF;
+    --surface-2: #EAEDF1;
+    --ink: #14181F;
+    --ink-2: #3D4652;
+    --muted: #666F7C;
+    --line: #D8DDE4;
+    --line-soft: #E7EAEF;
+    --accent: #2B4C6F;
+    --pass: #2E6B45;
+    --pass-soft: #E4EFE8;
+    --block: #A33A31;
+    --block-soft: #F6E7E5;
+    --warn: #8A6417;
+    --warn-soft: #F7EEDD;
+    --code-bg: #EDF0F3;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1319;
+      --surface: #161C24;
+      --surface-2: #1D242E;
+      --ink: #E3E8EF;
+      --ink-2: #BAC4D0;
+      --muted: #8B96A5;
+      --line: #2A333F;
+      --line-soft: #222A34;
+      --accent: #7FA8D4;
+      --pass: #6FBF8E;
+      --pass-soft: #16261D;
+      --block: #E08A80;
+      --block-soft: #2B1B19;
+      --warn: #D9AC5C;
+      --warn-soft: #2A2116;
+      --code-bg: #121820;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1319;
+    --surface: #161C24;
+    --surface-2: #1D242E;
+    --ink: #E3E8EF;
+    --ink-2: #BAC4D0;
+    --muted: #8B96A5;
+    --line: #2A333F;
+    --line-soft: #222A34;
+    --accent: #7FA8D4;
+    --pass: #6FBF8E;
+    --pass-soft: #16261D;
+    --block: #E08A80;
+    --block-soft: #2B1B19;
+    --warn: #D9AC5C;
+    --warn-soft: #2A2116;
+    --code-bg: #121820;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  header.doc {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2rem, 5.5vw, 3.1rem);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+
+  .standfirst { font-size: 1.1rem; max-width: 62ch; color: var(--ink-2); }
+
+  .status-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.73rem;
+    letter-spacing: 0.04em;
+    padding: 0.28rem 0.6rem;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .chip.ok { background: var(--pass-soft); color: var(--pass); border-color: var(--pass); }
+  .chip.neutral { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+
+  .env {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .env div { background: var(--surface); padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; }
+  .env dt { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .env dd { font-size: 0.95rem; color: var(--ink); }
+
+  section { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 1rem; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 3.4vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--ink);
+    text-wrap: balance;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--line);
+  }
+  h2 .num { font-family: var(--mono); font-size: 0.85rem; font-weight: 400; color: var(--accent); letter-spacing: 0.06em; flex: none; }
+
+  h3 { font-family: var(--sans); font-size: 1.02rem; font-weight: 650; color: var(--ink); letter-spacing: -0.005em; margin-top: 0.4rem; }
+
+  p { max-width: 68ch; }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  ul, ol { padding-left: 1.3rem; max-width: 68ch; display: flex; flex-direction: column; gap: 0.45rem; }
+  li::marker { color: var(--muted); }
+
+  strong { color: var(--ink); font-weight: 650; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    border: 1px solid var(--line-soft);
+    border-radius: 3px;
+    padding: 0.08em 0.34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 0.85rem 1rem;
+    overflow-x: auto;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: 0.83rem; line-height: 1.6; white-space: pre; }
+
+  .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td code { font-size: 0.8rem; }
+  .num-col { font-variant-numeric: tabular-nums; font-family: var(--mono); white-space: nowrap; }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--muted);
+    border-radius: 4px;
+    background: var(--surface);
+    padding: 0.9rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .callout .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .callout p, .callout ul { max-width: 66ch; }
+  .callout.critical { border-left-color: var(--block); background: var(--block-soft); }
+  .callout.critical .label { color: var(--block); }
+  .callout.caution { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.caution .label { color: var(--warn); }
+  .callout.good { border-left-color: var(--pass); background: var(--pass-soft); }
+  .callout.good .label { color: var(--pass); }
+
+  .defects { display: flex; flex-direction: column; gap: 0.9rem; }
+  .defect {
+    display: grid;
+    grid-template-columns: 2.4rem 1fr;
+    gap: 0.2rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+  }
+  .defect .mark { font-family: var(--mono); font-size: 1.3rem; color: var(--block); line-height: 1.2; }
+  .defect h4 { font-size: 1rem; font-weight: 650; color: var(--ink); }
+  .defect p { margin-top: 0.3rem; font-size: 0.94rem; }
+  .defect .fix { grid-column: 2; font-size: 0.88rem; color: var(--pass); font-family: var(--mono); margin-top: 0.5rem; }
+
+  figure { display: flex; flex-direction: column; gap: 0.6rem; }
+  .diagram-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1rem; }
+  .diagram-scroll svg { display: block; min-width: 40rem; width: 100%; height: auto; }
+  figcaption { font-size: 0.85rem; color: var(--muted); max-width: 66ch; }
+
+  .svg-box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; }
+  .svg-box-bad { fill: var(--block-soft); stroke: var(--block); stroke-width: 1.5; }
+  .svg-label { fill: var(--ink); font-family: var(--sans); font-size: 12px; }
+  .svg-sub { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+  .svg-rowlabel { fill: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .svg-arrow { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+  .svg-mark { fill: var(--block); font-family: var(--mono); font-size: 12px; font-weight: 700; }
+
+  .check { list-style: none; padding: 0; gap: 0.55rem; }
+  .check li {
+    display: flex;
+    gap: 0.7rem;
+    align-items: baseline;
+    padding: 0.6rem 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.94rem;
+  }
+  .check li::before { content: "\2610"; color: var(--accent); font-size: 1.05rem; flex: none; }
+
+  footer.doc {
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="doc">
+    <div class="eyebrow">Runbook · kuzlab.dev homelab</div>
+    <h1>Remote Virtual Desktop</h1>
+    <p class="standfirst">Connecting a Meta Quest 3 to Virtual Desktop Streamer on a MacBook from outside the home network, through port forwarding on OPNsense — the setup, the verification procedure, and the three silent failures that made it look like a carrier problem.</p>
+    <div class="status-row">
+      <span class="chip ok">Verified 2026-08-16</span>
+      <span class="chip neutral">OPNsense 26.7</span>
+      <span class="chip neutral">Streamer 1.34.18</span>
+      <span class="chip neutral">macOS 27.0</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">00</span> Environment</h2>
+    <p>Written against a working installation. The public address is shown as <code>&lt;WAN_IP&gt;</code> throughout — read the real value from Interfaces → Overview, or with <code>ifconfig pppoe0 | grep 'inet '</code>.</p>
+    <dl class="env">
+      <div><dt>Computer</dt><dd>MacBook Pro M1 Pro, macOS 27.0, <code>192.168.10.10</code></dd></div>
+      <div><dt>Streamer</dt><dd>Virtual Desktop Streamer 1.34.18</dd></div>
+      <div><dt>Headset</dt><dd>Meta Quest 3, Virtual Desktop from the Meta store</dd></div>
+      <div><dt>Router</dt><dd>OPNsense 26.7, VM on Proxmox</dd></div>
+      <div><dt>WAN</dt><dd><code>pppoe0</code>, public IPv4, no CGNAT</dd></div>
+      <div><dt>Client segment</dt><dd><code>vlan02</code> — Trusted, gateway <code>192.168.10.1</code></dd></div>
+      <div><dt>Policy</dt><dd>Inter-VLAN default deny, outbound internet allowed</dd></div>
+      <div><dt>Headset network</dt><dd>Phone hotspot on mobile data (carrier CGNAT)</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2><span class="num">01</span> How remote mode actually works</h2>
+    <p>Worth understanding before touching the firewall, because it dictates which NAT settings are load-bearing.</p>
+    <ol>
+      <li>The Streamer holds a permanent <strong>outbound</strong> TCP connection to the Virtual Desktop cloud (Azure — <code>40.89.161.236</code> was observed), using <strong>source port 38810</strong>.</li>
+      <li>The headset signs in to the same cloud and sees the computer in its list. This works even when no direct path exists, so <strong>"the computer is visible" proves nothing</strong> about the network.</li>
+      <li>On a connection attempt the cloud tells each side the other's address and <strong>TCP hole punching</strong> begins: the Mac dials the headset, the headset dials the Mac, and the Streamer opens a <code>LISTEN</code> socket on 38810 at the same moment.</li>
+      <li>A headset on mobile data sits behind symmetric carrier-grade NAT almost every time, so the Mac's outbound punch never lands. <strong>The only path that survives is the headset's inbound connection to your forwarded port.</strong></li>
+    </ol>
+
+    <div class="callout critical">
+      <span class="label">The consequence that matters</span>
+      <p>The public port the cloud advertises to the headset must be the same port you forwarded. By default pf randomizes the source port during translation, so the cloud advertises a random high port with nothing behind it. That makes <strong>static port</strong> mandatory, not optional — see section 03.</p>
+    </div>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 900 300" role="img" aria-label="Two traffic paths for Virtual Desktop remote mode, with three failure points marked">
+          <text class="svg-rowlabel" x="20" y="26">A · CLOUD REGISTRATION (OUTBOUND)</text>
+
+          <rect class="svg-box" x="20" y="40" width="150" height="52" rx="3"></rect>
+          <text class="svg-label" x="34" y="62">Streamer</text>
+          <text class="svg-sub" x="34" y="79">src port 38810</text>
+
+          <path class="svg-arrow" d="M175 66 H 235" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box-bad" x="240" y="40" width="150" height="52" rx="3"></rect>
+          <text class="svg-label" x="254" y="62">Source NAT</text>
+          <text class="svg-sub" x="254" y="79">static port</text>
+          <text class="svg-mark" x="372" y="58">①</text>
+
+          <path class="svg-arrow" d="M395 66 H 455" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box" x="460" y="40" width="150" height="52" rx="3"></rect>
+          <text class="svg-label" x="474" y="62">VD cloud</text>
+          <text class="svg-sub" x="474" y="79">40.89.161.236</text>
+
+          <path class="svg-arrow" d="M615 66 H 675" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box" x="680" y="40" width="150" height="52" rx="3"></rect>
+          <text class="svg-label" x="694" y="62">Headset learns</text>
+          <text class="svg-sub" x="694" y="79">&lt;WAN_IP&gt;:38810</text>
+
+          <line x1="20" y1="128" x2="880" y2="128" stroke="var(--line)" stroke-width="1"></line>
+
+          <text class="svg-rowlabel" x="20" y="162">B · HEADSET CONNECTION (INBOUND)</text>
+
+          <rect class="svg-box" x="20" y="176" width="128" height="52" rx="3"></rect>
+          <text class="svg-label" x="32" y="198">Quest 3</text>
+          <text class="svg-sub" x="32" y="215">outside net</text>
+
+          <path class="svg-arrow" d="M153 202 H 183" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box" x="188" y="176" width="128" height="52" rx="3"></rect>
+          <text class="svg-label" x="200" y="198">pppoe0</text>
+          <text class="svg-sub" x="200" y="215">WAN</text>
+
+          <path class="svg-arrow" d="M321 202 H 351" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box-bad" x="356" y="176" width="128" height="52" rx="3"></rect>
+          <text class="svg-label" x="368" y="198">DNAT + alias</text>
+          <text class="svg-sub" x="368" y="215">rdr → host</text>
+          <text class="svg-mark" x="466" y="194">②</text>
+
+          <path class="svg-arrow" d="M489 202 H 519" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box-bad" x="524" y="176" width="128" height="52" rx="3"></rect>
+          <text class="svg-label" x="536" y="198">pass rule</text>
+          <text class="svg-sub" x="536" y="215">Register rule</text>
+          <text class="svg-mark" x="634" y="194">③</text>
+
+          <path class="svg-arrow" d="M657 202 H 687" marker-end="url(#ah)"></path>
+
+          <rect class="svg-box" x="692" y="176" width="128" height="52" rx="3"></rect>
+          <text class="svg-label" x="704" y="198">vlan02</text>
+          <text class="svg-sub" x="704" y="215">Trusted</text>
+
+          <path class="svg-arrow" d="M756 233 V 258" marker-end="url(#ah)"></path>
+          <rect class="svg-box" x="692" y="262" width="188" height="30" rx="3"></rect>
+          <text class="svg-label" x="704" y="282">MacBook :38810</text>
+
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)"></path>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption>Two independent paths. The red boxes mark the three places where traffic died silently in this installation — each one broke the connection on its own.</figcaption>
+    </figure>
+
+    <h3>Ports</h3>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="num-col">38810</td><td>TCP</td><td>Control channel and entry point during hole punching</td></tr>
+          <tr><td class="num-col">38820</td><td>TCP</td><td>Required by Virtual Desktop documentation</td></tr>
+          <tr><td class="num-col">38830</td><td>TCP</td><td>Required by Virtual Desktop documentation</td></tr>
+          <tr><td class="num-col">38840</td><td>TCP</td><td>Required by Virtual Desktop documentation</td></tr>
+          <tr><td class="num-col">38850</td><td>UDP</td><td>Observed on the macOS Streamer 1.34; absent from official requirements</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout caution">
+      <span class="label">Don't over-forward</span>
+      <p>Official documentation lists only the four TCP ports. UDP 38850 was added here after observing it on the macOS build, but it was never proven necessary. In a fresh setup, forward TCP only until you hit a problem that UDP demonstrably solves.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span> The Mac side</h2>
+    <ul>
+      <li>Streamer installed and signed in to the <strong>same account</strong> as the headset.</li>
+      <li><strong>Allow remote connections</strong>, <strong>Start with macOS</strong> and <strong>Ask for computer access</strong> all enabled. The first remote connection raises a confirmation dialog on the Mac — accept it, or the connection drops.</li>
+      <li>macOS Application Firewall either off, or with the Streamer explicitly allowed.</li>
+      <li>A <strong>fixed IP address</strong>. This is a requirement, not a nicety: the forward points at one specific address. Set it as a DHCP static mapping in OPNsense.</li>
+      <li>If <strong>Private Wi-Fi Address</strong> is on for this network, switch it to <strong>Fixed</strong>. On Rotating, the MAC changes and the DHCP reservation stops matching.</li>
+    </ul>
+    <pre><code>ipconfig getifaddr en0</code></pre>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span> OPNsense configuration</h2>
+    <p>Subsections are in execution order.</p>
+
+    <h3>3.1 · Host alias</h3>
+    <p>Firewall → Aliases → create a <strong>Host(s)</strong> alias named <code>HOST_MAC</code> containing <strong>exactly one</strong> address, <code>192.168.10.10</code>.</p>
+    <div class="callout critical">
+      <span class="label">Failure ②</span>
+      <p>With more than one address in the alias, pf loads the forward with a <code>round-robin</code> flag and distributes connections across the addresses in turn. Half the attempts land on a host where nothing is listening and die silently — no log entry, no rejection.</p>
+    </div>
+    <pre><code>pfctl -t HOST_MAC -T show</code></pre>
+    <p>Expect exactly one line.</p>
+
+    <h3>3.2 · Source NAT — static port</h3>
+    <p>Firewall → NAT → <strong>Source NAT</strong> (called Outbound in older releases). Set the mode to <strong>Hybrid outbound NAT</strong> so the automatic rules survive, then add one rule per port or a single rule for the range.</p>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Interface</td><td>WAN</td></tr>
+          <tr><td>Protocol</td><td>TCP/UDP</td></tr>
+          <tr><td>Source</td><td><code>HOST_MAC</code></td></tr>
+          <tr><td>Source port</td><td class="num-col">38810, 38820, 38830, 38840, 38850</td></tr>
+          <tr><td>Destination</td><td>any</td></tr>
+          <tr><td>Translation target</td><td>Interface address</td></tr>
+          <tr><td><strong>Static port</strong></td><td><strong>enabled</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>pfctl -sn | grep 38810</code></pre>
+    <p>The output must contain <code>nat on pppoe0 … port = 38810 … static-port</code>.</p>
+
+    <h3>3.3 · Destination NAT — the forwards</h3>
+    <p>Firewall → NAT → <strong>Destination NAT</strong> — this is the former Port Forward page in OPNsense 26.7. One rule per TCP port.</p>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Interface</strong></td><td><strong>WAN</strong> — do not leave empty</td></tr>
+          <tr><td>Version</td><td>IPv4</td></tr>
+          <tr><td>Protocol</td><td>TCP</td></tr>
+          <tr><td>Source / Source port</td><td>any</td></tr>
+          <tr><td>Destination Address</td><td>WAN address</td></tr>
+          <tr><td>Destination Port</td><td class="num-col">38810 / 38820 / 38830 / 38840</td></tr>
+          <tr><td>Redirect Target IP</td><td><code>HOST_MAC</code></td></tr>
+          <tr><td>Redirect Target Port</td><td>same port — preserved</td></tr>
+          <tr><td><strong>Firewall rule</strong></td><td><strong>Register rule</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Press <strong>Apply</strong> once all rules are saved.</p>
+
+    <div class="callout critical">
+      <span class="label">Failure ③ · the Firewall rule field</span>
+      <ul>
+        <li><code>Manual</code> — no pass rule is created at all. The forward exists, but the translated packet is destroyed by the default-deny policy. <strong>This is the default value and the nastiest failure of the three: in the GUI everything looks configured.</strong></li>
+        <li><code>Pass</code> — works via <code>rdr-pass</code>, bypassing the filter set. The rule never appears under Firewall → Rules, isn't logged, and ignores rule ordering.</li>
+        <li><code>Register rule</code> — creates a linked rule that is visible and editable under Firewall → Rules → WAN, with logging. <strong>The right choice.</strong></li>
+      </ul>
+    </div>
+
+    <pre><code>pfctl -sr | grep 388</code></pre>
+    <p>Expect one line per port:</p>
+    <pre><code>pass in quick on pppoe0 reply-to (pppoe0 &lt;GW&gt;) inet proto tcp \
+     from any to &lt;HOST_MAC&gt; port = 38810 flags S/SA keep state</code></pre>
+    <p>The <code>reply-to</code> clause is essential on PPPoE — it guarantees the reply leaves through the same interface. <strong>If no lines appear after Apply, stop here; nothing downstream will work.</strong></p>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span> Verification</h2>
+    <p>Test the transport separately from the application. That is what tells a network fault apart from a Virtual Desktop fault.</p>
+
+    <h3>Three ways to test nothing at all</h3>
+    <div class="callout caution">
+      <span class="label">Invalid tests</span>
+      <ul>
+        <li><strong>Testing from inside the network.</strong> Reaching <code>&lt;WAN_IP&gt;</code> from any home device, including the Mac itself, is a hairpin request that cannot work without NAT reflection — by design.</li>
+        <li><strong>Phone silently back on home Wi-Fi.</strong> Turn Wi-Fi off in Settings, not in Control Center — from there it re-enables itself and rejoins the home network. Confirm by opening <code>https://ifconfig.me</code> on the phone; it must show a carrier address.</li>
+        <li><strong>Streamer and test server running together.</strong> They compete for port 38810 and only one wins.</li>
+      </ul>
+    </div>
+
+    <h3>Transport test</h3>
+    <p>On the Mac, from an empty directory — the server publishes the current directory to the internet:</p>
+    <pre><code>mkdir -p /tmp/vdtest &amp;&amp; cd /tmp/vdtest &amp;&amp; python3 -m http.server 38810 --bind 0.0.0.0</code></pre>
+    <p>From the phone on mobile data, open <code>http://&lt;WAN_IP&gt;:38810</code>.</p>
+    <div class="callout good">
+      <span class="label">Success looks like this</span>
+      <pre><code>&lt;CARRIER_IP&gt; - - [16/Aug/2026 05:09:45] "GET / HTTP/1.1" 200 -</code></pre>
+      <p>That single line proves the whole chain: internet → <code>pppoe0</code> → DNAT → pass rule → <code>vlan02</code> → Mac. Stop the server and remove the directory afterwards.</p>
+    </div>
+
+    <h3>Live test</h3>
+    <ol>
+      <li>Start Virtual Desktop Streamer.</li>
+      <li>Confirm it owns the ports: <code>lsof -nP -iTCP | grep 388</code> — expect the cloud connection plus bindings on 38820/38830/38840.</li>
+      <li>Put the headset on an outside network and connect.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span> Diagnostics</h2>
+
+    <h3>Bisecting the break</h3>
+    <p>Walk the chain in order. Each step splits the problem space in half and rules out an entire class of causes.</p>
+    <ol>
+      <li><strong>Is the Streamer listening?</strong> <code>lsof</code> on the Mac. If not, the fault is in the application and the network is irrelevant.</li>
+      <li><strong>Does the Mac's address match the alias?</strong> <code>ipconfig getifaddr en0</code> against <code>pfctl -t HOST_MAC -T show</code>.</li>
+      <li><strong>Has the public address changed?</strong> A PPPoE session reconnects and the address can move — the argument for dynamic DNS.</li>
+      <li><strong>Does the packet reach the WAN?</strong> Capture on <code>pppoe0</code> during an attempt. If not, the fault is in the outside network or the carrier.</li>
+      <li><strong>Does it reach the inside interface?</strong> Capture on <code>vlan02</code>. Present on WAN but absent here means a filter is dropping it, or the alias is wrong.</li>
+      <li><strong>Does the Mac reply?</strong> Capture on the Mac. SYN in with no SYN-ACK out means something on the host is blocking.</li>
+    </ol>
+
+    <h3>OPNsense commands</h3>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Goal</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>Find the WAN interface name</td><td><code>netstat -rn -f inet | head -5</code></td></tr>
+          <tr><td>Find the inside interface name</td><td><code>netstat -rn -f inet | grep 192.168.10</code></td></tr>
+          <tr><td>Current public address</td><td><code>ifconfig pppoe0 | grep 'inet '</code></td></tr>
+          <tr><td>Alias contents as loaded</td><td><code>pfctl -t HOST_MAC -T show</code></td></tr>
+          <tr><td>NAT rules</td><td><code>pfctl -sn | grep 388</code></td></tr>
+          <tr><td>Filter rules</td><td><code>pfctl -sr | grep 388</code></td></tr>
+          <tr><td>Live states</td><td><code>pfctl -ss | grep 3881</code></td></tr>
+          <tr><td>Flush states to an address</td><td><code>pfctl -k &lt;IP&gt;</code></td></tr>
+          <tr><td>Capture on WAN, excluding the cloud</td><td><code>tcpdump -ni pppoe0 'portrange 38810-38850 and not host 40.89.161.236'</code></td></tr>
+          <tr><td>Capture on the inside interface</td><td><code>tcpdump -ni vlan02 'tcp port 38810 and host 192.168.10.10'</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>GUI equivalents: Interfaces → Diagnostics → Packet Capture, and Firewall → Log Files → <strong>Live View</strong>, where filtering by destination port shows exactly which rule passed or blocked a packet. The Proxmox console doesn't scroll — use SSH for anything longer than a screen.</p>
+
+    <h3>macOS commands</h3>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Goal</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>What the Streamer is listening on</td><td><code>lsof -nP -iTCP -sTCP:LISTEN | grep 388</code></td></tr>
+          <tr><td>All Streamer sockets</td><td><code>sudo lsof -nP -i | grep -iE 'streamer|virtual'</code></td></tr>
+          <tr><td>Watch sockets over time</td><td><code>while true; do date '+%T'; lsof -nP -i | grep -E '388[0-9]0'; sleep 1; done</code></td></tr>
+          <tr><td>Mac address on the LAN</td><td><code>ipconfig getifaddr en0</code></td></tr>
+          <tr><td>Default route (VPN check)</td><td><code>netstat -rn -f inet | head -8</code></td></tr>
+          <tr><td>Capture on the Mac</td><td><code>sudo tcpdump -ni en0 'tcp port 38810'</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span> Symptom table</h2>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Check</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>"Computer is unreachable"; SYNs reach the WAN but never the inside interface</td>
+            <td>No pass rule for the forward</td>
+            <td><code>pfctl -sr | grep 388</code> is empty</td>
+            <td>Firewall rule = <code>Register rule</code>, Interface = WAN, Apply</td>
+          </tr>
+          <tr>
+            <td>Same, but the pass rules exist</td>
+            <td>Multiple addresses in the alias; <code>rdr</code> is round-robin</td>
+            <td><code>pfctl -t HOST_MAC -T show</code></td>
+            <td>Reduce the alias to one address</td>
+          </tr>
+          <tr>
+            <td>Computer visible, connection never establishes; the outside port in the state table isn't 38810</td>
+            <td>Source port randomization in Source NAT</td>
+            <td><code>pfctl -ss | grep 3881</code></td>
+            <td>Static port on the Source NAT rule, then restart the Streamer</td>
+          </tr>
+          <tr>
+            <td>External test fails although everything is configured</td>
+            <td>Test ran from inside, or the phone was on home Wi-Fi</td>
+            <td>Capture shows a <code>192.168.10.x</code> source</td>
+            <td>Test strictly from mobile data, Wi-Fi off in Settings</td>
+          </tr>
+          <tr>
+            <td>Test server answers but the headset still fails</td>
+            <td>The test server owns port 38810, so the Streamer can't bind it</td>
+            <td><code>lsof -nP -iTCP | grep 388</code></td>
+            <td>Stop the server, restart the Streamer</td>
+          </tr>
+          <tr>
+            <td>Worked before, broke after a reboot</td>
+            <td>The Mac's IP address changed</td>
+            <td><code>ipconfig getifaddr en0</code> against the alias</td>
+            <td>DHCP static mapping, Private Wi-Fi Address = Fixed</td>
+          </tr>
+          <tr>
+            <td>Worked before, broke with no change on the Mac</td>
+            <td>Public address changed after a PPPoE reconnect</td>
+            <td><code>ifconfig pppoe0 | grep 'inet '</code></td>
+            <td>Configure dynamic DNS</td>
+          </tr>
+          <tr>
+            <td>Connects but stutters or shows no image</td>
+            <td>UDP 38850 may be needed</td>
+            <td>Capture <code>portrange 38810-38850</code> during a session</td>
+            <td>Forward UDP 38850 the same way</td>
+          </tr>
+          <tr>
+            <td>The Mac's replies leave by the wrong path</td>
+            <td>A VPN exit node is active on the Mac</td>
+            <td><code>netstat -rn -f inet | head -8</code>, check Netif on <code>default</code></td>
+            <td>Disable the exit node</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span> What was actually broken</h2>
+    <p>Three independent defects, each sufficient on its own to break the connection completely. The combination is what made diagnosis hard: fixing any one of them changed nothing observable, which kept pointing suspicion at the carrier.</p>
+
+    <div class="defects">
+      <div class="defect">
+        <span class="mark">①</span>
+        <div>
+          <h4>Source port randomization in Source NAT</h4>
+          <p>The Streamer talked to the cloud from port 38810, but it left the router as 46677, so the cloud advertised 46677 to the headset — a port with nothing behind it.</p>
+        </div>
+        <div class="fix">→ enable Static port</div>
+      </div>
+
+      <div class="defect">
+        <span class="mark">②</span>
+        <div>
+          <h4>The alias held two addresses</h4>
+          <p><code>192.168.10.10</code> and <code>192.168.10.11</code>. The <code>rdr</code> rule loaded with <code>round-robin</code> and sent a share of connections to a host that did not exist.</p>
+        </div>
+        <div class="fix">→ one address in the alias</div>
+      </div>
+
+      <div class="defect">
+        <span class="mark">③</span>
+        <div>
+          <h4>No pass rules existed at all</h4>
+          <p>The Firewall rule field on every Destination NAT entry was set to <code>Manual</code>. The forwards looked configured in the GUI, but translated packets were destroyed by the default-deny policy.</p>
+        </div>
+        <div class="fix">→ Register rule + Interface = WAN</div>
+      </div>
+    </div>
+
+    <div class="callout caution">
+      <span class="label">The wrong theory, and how it died</span>
+      <p>"The carrier's double NAT is to blame" was the leading hypothesis for hours. It was plausible and it matches plenty of community reports — symmetric CGNAT really does block hole punching from the Mac's side. It was killed by one packet capture: <code>tcpdump</code> on <code>pppoe0</code> showed SYNs arriving from the carrier address before any fix was applied. The traffic was reaching the WAN the whole time. The problem was always inside the perimeter.</p>
+      <p><strong>The lesson:</strong> before accepting any theory that blames something outside your control, capture on the WAN interface. It answers "whose fault is this" in about a minute.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">08</span> Security and alternatives</h2>
+
+    <h3>What this setup costs</h3>
+    <p>Four TCP ports of a proprietary service are exposed to the entire internet. Mitigations in place: the rules target a single destination host, they were created through <code>Register rule</code> so they are visible and logged, and the Mac sits in a Trusted VLAN behind an inter-VLAN default-deny policy. The residual risk is real — any flaw in the Streamer's network code is reachable from the internet with no perimeter authentication in front of it.</p>
+
+    <h3>The better path for travel</h3>
+    <p>For connecting from arbitrary Wi-Fi networks and other countries, <strong>Tailscale installed on the Quest via the official Android APK</strong> (developer mode required on the headset) is both safer and more reliable:</p>
+    <ul>
+      <li>zero open ports on the WAN;</li>
+      <li>WireGuard authentication plus your tailnet identity, instead of trusting a proprietary service;</li>
+      <li>independent of the NAT type on the far side — when no direct path exists it falls back to a DERP relay, which is unusable for VR latency but fine for desktop work;</li>
+      <li>captive portals are only partly solved — hotels may still need a travel router running Tailscale.</li>
+    </ul>
+    <p>The sensible end state: keep the direct forward as a fast path for networks without symmetric NAT, and make the VPN the default when travelling.</p>
+
+    <h3>Maintenance</h3>
+    <ul>
+      <li>A DHCP static mapping for the Mac is mandatory, not optional.</li>
+      <li>Dynamic DNS on OPNsense if the public address is dynamic.</li>
+      <li>Re-check the port set after Streamer updates — the macOS build was rewritten in the 1.34 branch and its observed behaviour already differs from the documentation.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">09</span> Checklist</h2>
+    <ul class="check">
+      <li>Mac has a fixed address; Private Wi-Fi Address set to Fixed</li>
+      <li>Streamer: Allow remote connections, Start with macOS, Ask for computer access</li>
+      <li>Alias holds exactly one address</li>
+      <li>Source NAT with Static port covers ports 38810–38850</li>
+      <li>Four Destination NAT rules: Interface = WAN, Firewall rule = Register rule</li>
+      <li>Four pass rules loaded — <code>pfctl -sr | grep 388</code></li>
+      <li>Transport test from mobile data returns <code>GET /</code></li>
+      <li>Test server stopped, Streamer restarted</li>
+      <li>Headset connects from an outside network</li>
+    </ul>
+  </section>
+
+  <footer class="doc">
+    <div>kuzlab.dev homelab · verified 16 August 2026</div>
+    <div>Part of the <a href="https://github.com/kuz-lab/homelab">kuz-lab/homelab</a> lab notes.</div>
+  </footer>
+
+</div>
+
+</body>
+</html>
