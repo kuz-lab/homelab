@@ -1,2 +1,15 @@
 .DS_Store
 OPNsense/download_rules.csv
+
+# Local working files and private attachments
+/tmp/
+
+# Local credentials; examples may be committed
+.env
+.env.*
+!.env.example
+!.env.*.example
+secrets.yaml
+
+# Obsidian vault settings
+.obsidian/

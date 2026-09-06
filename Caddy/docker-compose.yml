@@ -1,3 +1,5 @@
+# Public example; adapt host paths and secrets before deployment.
+# The admin API is not published to the host.
 services:
   caddy:
     image: ghcr.io/caddybuilds/caddy-cloudflare:latest
@@ -8,7 +10,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "2019:2019"
     volumes:
       - /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - /var/lib/caddy-data:/data

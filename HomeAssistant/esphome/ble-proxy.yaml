@@ -16,7 +16,7 @@ wifi:
   password: !secret wifi_password
   ap:
     ssid: "ble-proxy-bedroom"
-    password: "fallback123"
+    password: !secret fallback_ap_password
 
 captive_portal:
 

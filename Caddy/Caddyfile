@@ -146,7 +146,7 @@ grafana.kuzlab.dev {
 influx.kuzlab.dev {
         import tls_cf
         import common
-        reverse_proxy 192.168.40.23:8086
+        reverse_proxy 192.168.40.23:8181
 }
 
 immich.kuzlab.dev {

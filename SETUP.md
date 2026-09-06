@@ -1,103 +1,143 @@
-# Setup and Screenshots
+# Hardware, Photos and Screenshots
 
-Physical hardware, workspace, and the dashboards that run on top of it.
+The equipment behind the lab, and what its dashboards look like.
 
----
+The screenshots were captured at different times as the lab changed. Treat the numbers in them as a snapshot of that moment rather than a current status.
+
+[Overview](README.md) · [Network](docs/network-and-access.md) · [Services](docs/services.md) · [Changelog](CHANGELOG.md)
+
+## Hardware
+
+| Device | Hardware | Role |
+| --- | --- | --- |
+| Cubi | MSI Cubi, Intel i5-120U, 40 GB RAM, 1 TB NVMe and 1 TB SATA SSD | Proxmox host for the applications |
+| ZimaBoard | ZimaBoard 2 N150, 16 GB RAM, 512 GB NVMe, 2× i226-V 2.5 GbE | Separate Proxmox host for OPNsense |
+| Raspberry Pi | Raspberry Pi 5, 8 GB RAM, 512 GB SSD | Installed and reachable; a separate SSH bastion is the next proposed role |
+| Modem | DrayTek Vigor 167 | DSL modem in bridge mode |
+| Switch | UniFi USW-Lite-8-PoE | Wired connections and VLAN trunking |
+| Access point | UniFi U7 Lite | Wi-Fi for personal, smart-home and guest devices |
+| UPS | Eaton Ellipse PRO 650 | Backup power and shutdown signalling |
+| Zigbee/Thread coordinator | SMLIGHT SLZB-MR5U | Smart-home device connectivity |
+| Rack | Waveshare HomeRack 8U, 10-inch | Houses the network equipment and the two hosts |
+
+### Switch ports
+
+Physical port notes from the earlier layout, not a current export of the switch's VLAN profiles:
+
+| Port | Device | Notes |
+| --- | --- | --- |
+| 1 | U7 Lite access point | PoE and the Wi-Fi VLANs |
+| 3 | Break-glass | Management VLAN only, for physical recovery |
+| 4 | SLZB-MR5U | Zigbee/Thread coordinator, PoE+ |
+| 5 | Wired fallback | Trusted VLAN, for when Wi-Fi is the problem |
+| 6 | Raspberry Pi | Second physical machine for future support roles |
+| 7 | Cubi | Tagged networks for the applications host |
+| 8 | ZimaBoard | VLAN trunk to OPNsense |
+
+<details>
+<summary>Physical layout and earlier design sketches</summary>
+
+![Physical layout of the modem, firewall host, switch, access point and services host](diagrams/Physical_topology.png)
+
+The drawings record earlier stages of the lab. The written [network notes](docs/network-and-access.md) and [service inventory](docs/services.md) describe later changes.
+
+- [DNS and access paths](diagrams/ingress-dns-access.png)
+- [VLAN policy sketch](diagrams/vlan-policy-matrix.png)
+- [Earlier service map](diagrams/service-map-by-host.png)
+- [Power and WAN recovery](diagrams/power-wan-recovery.png)
+
+</details>
 
 ## Rack
 
-Waveshare HomeRack 8U, 10-inch. Everything fits in one unit — modem, patch panel, switch, NUC, and space reserved for a Raspberry Pi 5. The Eaton UPS sits beside it.
+![Rack front with the modem, network equipment, labelled patch panel and the Eaton UPS beside it](photos/HomerackFront-2026-09.jpg)
 
-### Front
-
-![Rack front view — DrayTek modem, ZimaBoard, USW-Lite-8-PoE switch with labeled patch panel, MSI Cubi NUC, Eaton UPS](photos/HomerackFront.jpg)
-
-From top to bottom: DrayTek Vigor 167 modem, ZimaBoard 2, USW-Lite-8-PoE with patch panel, MSI Cubi NUC, empty shelf for the future RPi 5. Patch panel ports are labeled — makes troubleshooting faster when you can just look at the front and see which cable goes where.
-
-### Back
-
-![Rack back view — PDU and cable routing](photos/HomerackBack.jpg)
-
-PDU mounted at the bottom rear. Cable management is a work in progress.
-
----
+The labelled patch panel helps me trace connections when changing or troubleshooting equipment. September 2026.
 
 ## Workspace
 
-![Desk setup — Dell U2725QE, Philips 27E1N1600AM, MacBook Pro 16 on stand, ePaper display, CO2 sensor](photos/Workplace.jpg)
+<details>
+<summary>Desk, displays and the Home Assistant e-paper project</summary>
 
-Dell UltraSharp U2725QE (center) + Philips 27E1N1600AM (left) + MacBook Pro 16 M1 Pro on a stand. The ePaper display on the left shows date, weather, and outdoor conditions — updated three times a day via ESPHome. The small screen on the right is an Aranet4 CO2 monitor.
+![Workspace with two monitors, a MacBook, an e-paper display and a CO2 monitor](photos/Workplace.jpg)
 
-Keyboard is a Logitech MX Keys S, mouse is an MX Master 3S, both on Logi Bolt.
+Where I actually work on this: a MacBook Pro with Dell and Philips monitors. The e-paper display is driven by Home Assistant over ESPHome; the small Aranet4 next to it monitors CO2.
 
----
+</details>
 
 ## Dashboards
 
 ### Homarr
 
-![Homarr dashboard — one pane with Uptime Kuma, both Proxmox hosts, all Docker containers, OPNsense traffic, AdGuard, UPS, and app tiles](screenshots/Homarr.png)
+![Homarr dashboard with service links, status widgets and resource graphs](screenshots/Homarr.png)
 
-The main dashboard now. One page pulling live data from everything: uptime status, both Proxmox hosts (CPU, RAM, VMs, LXCs), all 21 Docker containers, OPNsense traffic, AdGuard blocking, and the UPS — plus quick tiles and widgets for each service, a calendar, and the weather. This is what I actually open day to day.
-
-### Homepage
-
-![Homepage dashboard showing network status, infrastructure health, service links](screenshots/Homepage.png)
-
-My first dashboard, still running. Top section shows WAN status, OPNsense stats, UniFi clients, and AdGuard filtering numbers. Infrastructure row shows both Proxmox hosts, Caddy upstreams, and Uptime Kuma status. Bottom section has quick links to all services.
-
-Homarr now covers all of this with live widgets on top, so Homepage will probably get retired in full once the last few things (a Caddy firewall rule, some monitors) stop pointing at it.
+The main dashboard: service links, host resources and monitoring widgets on one page, pulling live data from each service rather than just linking to it.
 
 ### Grafana
 
-![Grafana energy dashboard — current, average and peak power, daily and weekly energy, average power by hour](screenshots/Grafana_Proxmox.png)
+![Grafana dashboard showing power measurements and energy-use graphs](screenshots/Grafana_Proxmox.png)
 
-Grafana sitting on top of InfluxDB 3, here showing the homelab's power use — current draw, peak hour, energy per day/week/month, and average power by hour. Home Assistant and both Proxmox hosts feed the data.
-
-### Portainer
-
-![Portainer environments list — one agent per Docker LXC with stacks, containers and resource counts](screenshots/Portainer.png)
-
-Portainer with an agent on each Docker LXC, so every container across all of them shows up in one place — metrics, Immich, Paperless, Caddy, Homepage, Homarr, and the rest. I can start, stop, or check any of them without SSHing into nine separate containers.
-
-### Proxmox — Cubi (services host)
-
-![Proxmox Cubi — all VMs and LXCs listed in the sidebar, shell open](screenshots/ProxmoxCubi.png)
-
-The main services host. All the LXCs and VMs visible in the sidebar. Task log at the bottom shows recent backup jobs and console sessions.
-
-### Proxmox — ZimaBoard (edge host)
-
-![Proxmox ZimaBoard — OPNsense VM, storage, shell](screenshots/ProxmoxZima.png)
-
-The dedicated firewall host. Only one VM — OPNsense. Task log shows the nightly OPNsense backup and scheduled shutdown/startup cycles.
-
-### Home Assistant
-
-![Home Assistant dashboard](screenshots/HAOS.png)
-
-Home Assistant dashboard showing both Proxmox hosts (Cubi and ZimaBoard) with CPU, RAM, storage, and temperature monitoring. All VMs and containers are visible with resource usage. UPS status, UniFi AP with connected clients, and OPNsense health are tracked from one place.
-
-### OPNsense
-
-![OPNsense Lobby](screenshots/OPNsense.png)
-
-OPNsense dashboard — interfaces, traffic graphs, firewall log, and running services.
+Power use, backed by InfluxDB. The annual figures in this capture were extrapolated from a short observation window, so they are an early estimate rather than measured consumption. [Metrics notes](Metrics/Metrics.md)
 
 ### Uptime Kuma
 
-![Uptime Kuma — 18 monitors, uptime history, recent events](screenshots/UptimeKuma.png)
+![Uptime Kuma monitor list, availability history and events](screenshots/UptimeKuma.png)
 
-18 monitors covering gateways, core services, and internet connectivity. The event log shows real incidents — brief Music Assistant and UniFi restarts during maintenance, and the occasional internet drop that the WAN watchdog catches.
+Reachability checks and recent events, with failures pushed to ntfy. The event history is useful for comparing an outage with a backup or maintenance window.
+
+## More screenshots
+
+<details>
+<summary>Management interfaces and earlier dashboards</summary>
+
+### Homepage
+
+![Homepage dashboard with network status and service links](screenshots/Homepage.png)
+
+The dashboard I started with. It still runs alongside Homarr while a few monitors and one firewall rule still point at it.
+
+### Portainer
+
+![Portainer showing multiple Docker environments](screenshots/Portainer.png)
+
+Every Docker LXC runs its own daemon; Portainer's agents bring them into one interface.
+
+### Proxmox — Cubi
+
+![Proxmox Cubi view with the guest list and host console](screenshots/ProxmoxCubi.png)
+
+The applications host, with its guest list and task history.
+
+### Proxmox — ZimaBoard
+
+![Proxmox ZimaBoard view with the OPNsense virtual machine](screenshots/ProxmoxZima.png)
+
+The firewall host. One VM, on purpose — its job is to keep routing while I work on everything else. [Backup schedule](docs/backups-and-recovery.md)
+
+### Home Assistant
+
+![Home Assistant dashboard with infrastructure and power-status cards](screenshots/HAOS.png)
+
+Host, network and UPS information pulled into Home Assistant alongside the home automation. [Home-automation notes](HomeAssistant.md)
+
+### OPNsense
+
+![OPNsense dashboard with interfaces and traffic graphs](screenshots/OPNsense.png)
+
+The router dashboard. The firewall policy itself is in [firewall-rules.csv](OPNsense/firewall-rules.csv).
 
 ### AdGuard Home
 
-![AdGuard Home — DNS statistics, top clients, blocked domains](screenshots/adguard.png)
+![AdGuard Home dashboard with DNS-query and filtering statistics](screenshots/adguard.png)
 
-~37k queries in 24 hours, 20% blocked. Upstream goes to Unbound at 192.168.40.1 (OPNsense) for recursive resolution. Top clients are the MacBook, HAOS, and iPhone — servers bypass AdGuard and resolve directly through Unbound.
+DNS filtering for the client VLANs. Servers deliberately bypass it and query Unbound directly.
 
 ### UniFi Network
 
-![UniFi topology — switch, AP, wired and wireless clients with VLAN assignments](screenshots/Unifi.png)
+![UniFi topology view with the switch, access point and connected clients](screenshots/Unifi.png)
 
-Live network topology from UniFi OS. Shows the USW-Lite-8-PoE switch with all connected devices, the U7 Lite AP, and wireless clients with their VLAN assignments (Trusted vs IoT). SLZB-MR5U coordinator visible on the far left at 4 FE (Fast Ethernet over PoE).
+The controller's view of wired and wireless clients. Virtual machines can appear as separate clients behind one physical port, so this is not a literal cable diagram. [The adoption problem](TROUBLESHOOTING.md#unifi-adoption-across-networks)
+
+</details>
+
+[Back to the overview](README.md)

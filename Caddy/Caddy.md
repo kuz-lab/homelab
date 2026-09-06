@@ -1,36 +1,39 @@
 # Caddy
 
-Caddy is the reverse proxy for my homelab. I use it to expose internal services through clean local hostnames (`*.kuzlab.dev`), with HTTPS handled automatically. Certificate validation is done via Cloudflare DNS-01, meaning I don't need to expose my services publicly just to get valid TLS certificates.
+Caddy gives my web applications readable names and HTTPS. It runs in its own Linux container on Cubi.
 
-It runs in its own LXC on my Cubi host. The container has one simple job: run the proxy and keep its configuration separate from the services behind it.
+[Overview](../README.md) · [Network and access](../docs/network-and-access.md)
 
-## Why Caddy?
+## Why I chose it
 
-When I first bought a domain to make my services easier to access, my first attempt at a reverse proxy was Nginx Proxy Manager. I thought a GUI would make things easy, but after a few frustrating and failed attempts, I gave up. I searched for an alternative, found Caddy, followed a basic forum tutorial, and it worked immediately. No fighting a GUI, just simple configuration. Over time, my Caddyfile evolved based on official docs and community forums.
+I bought a domain for the lab and started with Nginx Proxy Manager. I could not get it working the way I wanted, so I tried Caddy using a forum tutorial. Once it worked, I added routes as I needed them.
 
-## What broke along the way
+## What went wrong
 
-My setup evolved through trial and error. The initial installation was native Caddy with the Cloudflare module compiled in. It broke completely after the first `apt upgrade` — the plugin didn't survive. 
+My first installation was a native build with the Cloudflare DNS module compiled in. A package upgrade replaced it with a stock build, and the module was gone.
 
-To avoid that maintenance headache, I switched to a community Docker image that already bundled the plugin. I initially ran this via a systemd unit with a massive `docker run` command, but that eventually broke after a restart too. On top of that, I learned a hard lesson about data persistence: because I didn't mount a `/data` directory in that early setup, my certificates vanished every time the container was recreated.
+I moved to a Docker image that included it. At first I started that with a long `docker run` command wrapped in a systemd unit. Later I moved the settings into Compose, where they were easier to review and change.
 
-That pushed me to rethink the whole approach.
+Without a persistent `/data` directory, recreating the container also threw away the certificates and ACME account data. Caddy had to obtain certificates again. The state now lives on the host and survives container recreation.
 
-## Current Setup
+## Current arrangement
 
-Today it all runs via Docker Compose using the `ghcr.io/caddybuilds/caddy-cloudflare:latest` image. It's just one `.yml` file — much easier to update and keep in version control.
+| Host path | Container path | Purpose |
+| --- | --- | --- |
+| `/etc/caddy/Caddyfile` | `/etc/caddy/Caddyfile` | Routing configuration, mounted read-only |
+| `/var/lib/caddy-data` | `/data` | Certificates and ACME account |
+| `/var/lib/caddy-config` | `/config` | Runtime configuration |
+| `/var/log/caddy` | `/var/log/caddy` | Logs |
 
-The key files are:
-- [`Caddyfile`](Caddyfile) — reverse proxy rules
-- [`docker-compose.yml`](docker-compose.yml) — container definition
-- `/etc/caddy/.env` — local environment file for the Cloudflare API token
+Caddy uses Cloudflare's API to create DNS validation records. A certificate authority then issues the certificates; Cloudflare is the DNS provider in this process. This does not require opening inbound ports for certificate validation. [Caddy DNS-01 documentation](https://caddyserver.com/docs/automatic-https#dns-challenge)
 
-Persistent data is now safely stored outside the container so certificates and configs survive updates:
-- `/var/lib/caddy-data:/data` — certificates and ACME account
-- `/var/lib/caddy-config:/config` — runtime config cache
+## Files here
 
-## Repository Scope
+- [Caddyfile](Caddyfile) — a selection of the service routes.
+- [Compose example](docker-compose.yml) — the container definition; it reads its Cloudflare token from a private environment file at `/etc/caddy/caddy.env`.
 
-This folder contains the clean, public version of my Caddy setup. Secrets are not included — the real Cloudflare API token stays only on the host.
+The public Compose example no longer publishes the admin API port, because it controls Caddy's configuration. This is a repository change, not a change to the running deployment. [Admin API documentation](https://caddyserver.com/docs/api)
 
-For related incidents and fixes, check out my [Troubleshooting](../TROUBLESHOOTING.md) notes.
+Some HTTPS upstreams in the Caddyfile use `tls_insecure_skip_verify` for their local certificates. That skips upstream identity verification; trusting an appropriate certificate authority is the stronger arrangement. The published file records this limitation rather than hiding it.
+
+[More troubleshooting notes](../TROUBLESHOOTING.md)

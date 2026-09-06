@@ -4,6 +4,10 @@ Connecting a Meta Quest 3 to Virtual Desktop Streamer on a MacBook from outside 
 
 Verified on 16 August 2026 with OPNsense 26.7, Virtual Desktop Streamer 1.34.18, and macOS 27.0.
 
+This is an account of one investigation in August 2026, not a specification for every Streamer version or mobile network. It concerns viewing the Mac desktop from a headset, not PCVR game streaming. The setup deliberately opens ports to the internet; the current status of those forwards was not checked during the September documentation review.
+
+[Overview](../README.md) · [Troubleshooting](../TROUBLESHOOTING.md) · [Current network notes](network-and-access.md)
+
 ## Environment
 
 The public address is shown as `<WAN_IP>` throughout. Read the real value from **Interfaces → Overview** or with:
@@ -23,14 +27,13 @@ ifconfig pppoe0 | grep 'inet '
 | Policy | Inter-VLAN default deny, outbound internet allowed |
 | Headset network | Phone hotspot on mobile data (carrier CGNAT) |
 
-## How remote mode works
+## What I observed
 
-1. The Streamer holds a permanent outbound TCP connection to the Virtual Desktop cloud. Azure address `40.89.161.236` was observed, with source port `38810`.
-2. The headset signs in to the same cloud and sees the computer in its list. This works even when no direct path exists, so seeing the computer does not prove that the network path works.
-3. On a connection attempt, the cloud tells each side the other's address and TCP hole punching begins: the Mac dials the headset, the headset dials the Mac, and the Streamer opens a `LISTEN` socket on `38810` at the same moment.
-4. A headset on mobile data is usually behind symmetric carrier-grade NAT, so the Mac's outbound punch does not land. The surviving path is the headset's inbound connection to the forwarded port.
+The headset could list the Mac even when it could not connect. The Streamer had an outbound connection to `40.89.161.236` from local port `38810`, and connection attempts from the mobile network reached OPNsense's WAN interface.
 
-The public port advertised by the cloud must match the forwarded port. By default, `pf` randomizes the source port during translation; the cloud then advertises a random high port with nothing behind it. Static-port translation is therefore required.
+The state table showed that source NAT had changed `38810` to a different outside port. Preserving that port was one of the changes in the working configuration. My explanation was that the translated port interfered with rendezvous or hole punching, but the captures did not establish the cloud's internal signalling or the carrier's exact NAT behaviour.
+
+The useful distinction was simpler: listing the computer worked; establishing the actual connection did not.
 
 ### Ports
 
@@ -42,13 +45,13 @@ The public port advertised by the cloud must match the forwarded port. By defaul
 | 38840 | TCP | Required by Virtual Desktop documentation |
 | 38850 | UDP | Observed on macOS Streamer 1.34; absent from the official requirements |
 
-Official documentation lists only the four TCP ports. UDP `38850` was added after observing it on the macOS build, but it was not proven necessary. On a fresh setup, forward TCP only until a demonstrated problem requires UDP.
+The [Virtual Desktop FAQ](https://www.vrdesktop.net/) lists the four TCP ports. UDP `38850` was observed on the macOS build, but was not proven necessary for this connection. Its appearance in a capture alone is not a reason to open another port.
 
 ## Mac setup
 
 - Install Virtual Desktop Streamer and sign in with the same account used on the headset.
 - Enable **Allow remote connections**, **Start with macOS**, and **Ask for computer access**. Accept the confirmation dialog on the Mac on the first remote connection, or the connection will drop.
-- Disable the macOS Application Firewall or explicitly allow the Streamer.
+- Keep the macOS Application Firewall enabled and explicitly allow the Streamer. [Apple's application-firewall settings](https://support.apple.com/guide/mac-help/block-connections-to-your-mac-with-a-firewall-mh34041/mac)
 - Give the Mac a fixed address using a DHCP static mapping in OPNsense. The port forward targets one specific address.
 - If **Private Wi-Fi Address** is enabled for this network, set it to **Fixed**. In Rotating mode, the MAC changes and the DHCP reservation no longer matches.
 
@@ -78,14 +81,14 @@ Expect exactly one line.
 
 ### 2. Source NAT with a static port
 
-Open **Firewall → NAT → Source NAT** (called Outbound in older releases). Select **Hybrid outbound NAT** so the automatic rules remain, then add one rule per port or a single rule for the range.
+The lab used Hybrid outbound NAT with a static-port rule. OPNsense has both Outbound NAT settings and a newer Source NAT interface; their controls are not interchangeable. The automatic/Hybrid mode is configured under Outbound, while the newer interface has a separate rule view. Check the installed version's [NAT documentation](https://docs.opnsense.org/manual/nat.html) before recreating this setup.
 
 | Field | Value |
 | --- | --- |
 | Interface | WAN |
-| Protocol | TCP/UDP |
+| Protocol | TCP for the documented forwarding path |
 | Source | `HOST_MAC` |
-| Source port | 38810, 38820, 38830, 38840, 38850 |
+| Source port | Match the Streamer's observed source ports; `38810` was the relevant one in this test |
 | Destination | any |
 | Translation target | Interface address |
 | **Static port** | **enabled** |
@@ -118,9 +121,9 @@ Press **Apply** after saving all rules.
 
 The **Firewall rule** option matters:
 
-- `Manual` creates no pass rule. The forward exists, but the default-deny policy drops the translated packet.
-- `Pass` works through `rdr-pass`, bypassing the filter rules. It is not visible under **Firewall → Rules**, is not logged, and ignores rule ordering.
-- `Register rule` creates a linked, logged rule under **Firewall → Rules → WAN**. This is the recommended option.
+- `Manual` creates no linked pass rule; a separate matching firewall rule is needed. That separate rule was missing here.
+- `Pass` accepts traffic through the NAT rule rather than a separately visible rule in the rules tab.
+- `Register rule`, used in this case, generates a linked filter rule. Check the generated rules and logging settings instead of assuming the NAT entry alone proves traffic is allowed. [OPNsense filter-rule association](https://docs.opnsense.org/manual/nat.html#filter-rule-association)
 
 Verify the generated pass rules:
 
@@ -135,7 +138,7 @@ pass in quick on pppoe0 reply-to (pppoe0 <GW>) inet proto tcp \
   from any to 192.168.10.10 port = 38810 flags S/SA keep state
 ```
 
-The `reply-to` clause is essential on PPPoE because it ensures that the reply leaves through the same interface. If no lines appear after **Apply**, stop and fix the rules before continuing.
+The `reply-to` clause was present in this installation and directs replies through the specified interface and gateway. If no matching pass rule appears after **Apply**, investigate before continuing.
 
 ## Verification
 
@@ -152,8 +155,8 @@ Test the transport separately from Virtual Desktop so a network fault can be dis
 On the Mac, start a temporary HTTP server from an empty directory. The command publishes the current directory to the internet:
 
 ```sh
-mkdir -p /tmp/vdtest
-cd /tmp/vdtest
+vd_test_dir=$(mktemp -d /tmp/vdtest.XXXXXX)
+cd "$vd_test_dir"
 python3 -m http.server 38810 --bind 0.0.0.0
 ```
 
@@ -163,7 +166,7 @@ From the phone on mobile data, open `http://<WAN_IP>:38810`. A successful reques
 <CARRIER_IP> - - [16/Aug/2026 05:09:45] "GET / HTTP/1.1" 200 -
 ```
 
-This proves the full path: internet → `pppoe0` → DNAT → pass rule → `vlan02` → Mac. Stop the server and remove the temporary directory afterwards.
+This verifies inbound HTTP connectivity through the forwarding path, not Virtual Desktop itself. Stop the server with Ctrl-C immediately after the test. The temporary directory was created empty so the test does not expose personal files.
 
 ### Live test
 
@@ -179,10 +182,10 @@ Check the path in order:
 
 1. Is the Streamer listening? Use `lsof` on the Mac. If not, the fault is in the application.
 2. Does the Mac address match the alias? Compare `ipconfig getifaddr en0` with `pfctl -t HOST_MAC -T show`.
-3. Has the public address changed after a PPPoE reconnect? If it changes, configure dynamic DNS.
-4. Does the packet reach the WAN? Capture on `pppoe0` during an attempt. If not, the fault is in the outside network or carrier.
-5. Does it reach the inside interface? Capture on `vlan02`. If it appears on WAN but not here, a filter is dropping it or the alias is wrong.
-6. Does the Mac reply? Capture on the Mac. A SYN arriving with no SYN-ACK leaving indicates host-side blocking.
+3. Has the public address changed after a PPPoE reconnect? Make sure the test targets the current address.
+4. Does the packet reach the WAN? Capture on `pppoe0` during an attempt. If not, check the test address, capture filter and outside path before attributing it to the carrier.
+5. Does it reach the inside interface? Capture on `vlan02`. If it appears only on WAN, inspect filtering, NAT and the target alias.
+6. Does the Mac reply? A SYN without a SYN-ACK warrants checking the listener, host firewall and return route.
 
 ### OPNsense commands
 
@@ -214,7 +217,7 @@ GUI equivalents are **Interfaces → Diagnostics → Packet Capture** and **Fire
 
 ## Symptom table
 
-| Symptom | Cause | Check | Fix |
+| Symptom | Possible cause | Check | Action to consider |
 | --- | --- | --- | --- |
 | “Computer is unreachable”; SYNs reach WAN but never the inside interface | No pass rule for the forward | `pfctl -sr \| grep 388` is empty | Set Firewall rule to `Register rule`, Interface to WAN, then Apply |
 | Same symptom, but pass rules exist | Multiple addresses in the alias; `rdr` uses round-robin | `pfctl -t HOST_MAC -T show` | Reduce the alias to one address |
@@ -222,45 +225,38 @@ GUI equivalents are **Interfaces → Diagnostics → Packet Capture** and **Fire
 | External test fails although everything is configured | Test ran from inside, or the phone was on home Wi-Fi | Capture shows a `192.168.10.x` source | Test from mobile data with Wi-Fi disabled in Settings |
 | Test server answers but the headset still fails | Test server owns port 38810, preventing Streamer from binding it | `lsof -nP -iTCP \| grep 388` | Stop the server and restart the Streamer |
 | It worked before but failed after a reboot | Mac address changed | Compare `ipconfig getifaddr en0` with the alias | Add a DHCP static mapping and set Private Wi-Fi Address to Fixed |
-| It worked before but failed without a Mac change | Public address changed after PPPoE reconnect | `ifconfig pppoe0 \| grep 'inet '` | Configure dynamic DNS |
-| It connects but stutters or shows no image | UDP 38850 may be needed | Capture `portrange 38810-38850` during a session | Forward UDP 38850 in the same way |
+| It worked before but failed without a Mac change | Test is targeting an old public address | `ifconfig pppoe0 \| grep 'inet '` | Repeat the test against the current address |
+| It connects but stutters or shows no image | Transport or application issue; cause not established here | Capture `portrange 38810-38850` during a session | Check current application requirements before opening additional ports |
 | Mac replies leave by the wrong path | A VPN exit node is active on the Mac | Check `netstat -rn -f inet \| head -8` and the `default` route Netif | Disable the exit node |
 
 ## The three faults found in this installation
 
-Each fault was independently sufficient to break the connection:
+Three configuration issues were corrected before the successful test; they were not separately reproduced in controlled isolation:
 
-1. **Source-port randomization in Source NAT.** The Streamer contacted the cloud from port `38810`, but the router translated it to `46677`. The cloud advertised `46677` to the headset even though nothing was forwarded behind it. Fix: enable **Static port**.
+1. **Source-port randomization in Source NAT.** The Streamer used local port `38810`, but the router translated it to `46677`. I enabled **Static port**. The proposed effect on connection negotiation is explained above as an inference.
 2. **The alias contained two addresses.** It held `192.168.10.10` and `192.168.10.11`, so the `rdr` rule loaded with `round-robin` and sent some connections to a nonexistent host. Fix: keep exactly one address in the alias.
 3. **No pass rules existed.** Every Destination NAT entry used `Manual`, so the forwards looked configured while default-deny silently discarded translated packets. Fix: choose **Register rule** and WAN as the interface.
 
-Symmetric carrier NAT was initially suspected because it can block hole punching from the Mac side. A capture on `pppoe0`, however, showed SYNs arriving from the carrier before any fix was applied. The traffic was reaching the WAN; the faults were inside the perimeter. Capture on the WAN before blaming a system outside your control.
+Carrier NAT was initially suspected. A capture on `pppoe0`, however, showed SYNs arriving before any fix was applied. This did not prove every aspect of the carrier's network was irrelevant, but it gave me a concrete path to investigate inside the lab.
 
 ## Security and alternatives
 
-This setup exposes four TCP ports of a proprietary service to the entire internet. The rules target one host, are visible and logged because they use `Register rule`, and the Mac is in a Trusted VLAN behind an inter-VLAN default-deny policy. The remaining risk is that a flaw in the Streamer's network code is directly reachable without perimeter authentication.
+The tested setup exposed four TCP ports of the Streamer to the internet. The rules targeted one host, but that still left the application's network-facing code reachable without VPN authentication. Application-level access controls and updates remain important; VLAN separation does not remove that exposure.
 
-For travel, installing Tailscale on the Quest from the official Android APK requires headset developer mode but offers a safer path:
-
-- no open WAN ports;
-- WireGuard authentication and tailnet identity;
-- independence from the remote network's NAT type; when no direct path exists, DERP relay fallback remains usable for desktop work, though its latency is unsuitable for VR;
-- captive portals remain only partly solved and may require a travel router running Tailscale.
-
-A practical end state is to keep direct forwarding as a fast path for networks without symmetric NAT and use the VPN by default while travelling.
+An authenticated VPN path is an alternative to evaluate, including headset support and latency. It was not validated as a replacement in this case study. Port forwards should be disabled when they are no longer needed.
 
 Maintenance requirements:
 
 - Keep a DHCP static mapping for the Mac.
-- Configure dynamic DNS on OPNsense if the public address is dynamic.
-- Re-check the port set after Streamer updates. The macOS build changed in the 1.34 branch and its observed behavior already differs from the documentation.
+- Check the current public address when repeating external tests.
+- Re-check the port requirements after Streamer updates; distinguish observed traffic from proven forwarding requirements.
 
 ## Checklist
 
 - [ ] Mac has a fixed address and Private Wi-Fi Address is set to Fixed.
 - [ ] Streamer has Allow remote connections, Start with macOS, and Ask for computer access enabled.
 - [ ] `HOST_MAC` contains exactly one address.
-- [ ] Source NAT with Static port covers ports 38810–38850.
+- [ ] The intended static-port rule is loaded for the source traffic observed in this setup.
 - [ ] Four Destination NAT rules use Interface = WAN and Firewall rule = Register rule.
 - [ ] Four pass rules are loaded: `pfctl -sr | grep 388`.
 - [ ] A transport test from mobile data returns `GET /`.

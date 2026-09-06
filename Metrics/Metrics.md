@@ -1,44 +1,36 @@
-# Metrics (Grafana + InfluxDB 3)
+# Metrics: Grafana and InfluxDB
 
-This is my metrics stack — Grafana for the dashboards and InfluxDB 3 Enterprise for the time-series data behind them. It runs in its own LXC (CT 100) on Cubi with Docker Compose. Wazuh tells me when something is insecure or broken; this tells me how everything is behaving over time.
+Grafana shows how power use, temperatures and system resources change over time. InfluxDB stores the measurements behind the charts.
 
-## The 2.x → 3 story
+[Overview](../README.md) · [Services](../docs/services.md) · [Dashboard screenshot](../SETUP.md#grafana)
 
-I started on InfluxDB 2.9.1 and moved to InfluxDB 3 Enterprise a few days later, while I still only had about five days of data. Because there was nothing worth keeping yet (no weekly trends, no monthly comparisons), I did a clean cutover instead of running both side by side — pulled Home Assistant off v2, pointed it at v3, and repointed the Proxmox metric servers.
+## What the charts are for
 
-The main thing to know about v3: it dropped the built-in task engine that v2 had for downsampling. So if I want long-term rollups later, I'll need an external scheduler to do it. For now the raw data is fine.
+Home Assistant pushes measurements from the house and the lab — energy, climate, valve positions, air quality — and both Proxmox hosts report their own system metrics, into separate `haos` and `proxmox` databases that Grafana queries over SQL.
 
-The old v2 stack is stopped but still on the host as a fallback reference until the v3 setup has proven itself over a longer stretch.
+The questions are simple ones: how much power is the lab drawing, when does it spike, and did a maintenance change move anything.
 
-## What it collects
+## Moving from version 2 to version 3
 
-- **Home Assistant** — ~55 entities: energy (homelab total, DrayTek, UPS, workspace, kitchen), climate (room temps, Eve TRV valve positions), window contacts, weather, air quality, and infrastructure health like CPU and rack temperatures.
-- **Proxmox** — both hosts (Cubi and ZimaBoard) report in via the built-in metric server.
+I started on InfluxDB 2 and switched to 3 Enterprise about five days later, while there was almost no history to lose. That made it a clean cutover — change the writers, rebuild the dashboards — instead of a migration.
 
-There are two databases, `haos` and `proxmox`, kept separate. Grafana reads them over SQL (Flight SQL / gRPC) rather than the old Flux queries — the visual query builder in Grafana works with SQL, which makes building panels a lot less fiddly.
+Long-term downsampling is still on the list. InfluxDB 3 Enterprise supports scheduled processing, including a [Downsampler plugin](https://docs.influxdata.com/influxdb3/enterprise/plugins/library/official/downsampler/); an external scheduler is not the only option. I have not set up that workflow here yet.
 
-There's also InfluxDB Explorer running at `explorer.kuzlab.dev` for poking at the data directly.
+## What runs now
 
-## Current setup
+Observed during the 6 September 2026 check:
 
-Two stacks, deployed two different ways:
+| Container | Image | Port |
+| --- | --- | --- |
+| Grafana | `grafana/grafana:13.1.0` | 3000 |
+| InfluxDB 3 | `influxdb:3-enterprise` | 8181 |
+| InfluxDB Explorer | `influxdata/influxdb3-ui:1.9.0` | 8888 |
 
-- **Grafana** lives in a Compose file at `/etc/metrics/` (alongside the stopped legacy v2 container).
-- **InfluxDB 3 Enterprise** runs as a Portainer stack rather than an `/etc` file, since I moved container management onto Portainer around the same time.
+## Files here
 
-The files here:
+- [Grafana Compose example](docker-compose.yml) — Grafana only, without the old InfluxDB 2 service or dependency. Configure the data source separately.
+- [InfluxDB 3 Compose example](influxdb3-compose.yml) — the database as a separate stack. The Explorer container is not included in this example.
 
-- [`docker-compose.yml`](docker-compose.yml) — the Grafana / legacy-v2 stack (`/etc/metrics/`)
-- [`influxdb3-compose.yml`](influxdb3-compose.yml) — the InfluxDB 3 Enterprise stack (Portainer)
+The old combined file would have started InfluxDB 2 through Grafana's `depends_on`, even though that database was no longer deployed. It remains in Git history, not in the current example. [Compose dependency behaviour](https://docs.docker.com/compose/how-tos/startup-order/)
 
-Updates follow the same workflow as the rest of my Docker services: `docker compose pull && docker compose up -d`.
-
-## One gotcha worth noting
-
-Scoped resource tokens return a 403 on InfluxDB 3 Enterprise's v2 write-compatibility API — a known behavior. So the Proxmox metric servers use an admin token, while Home Assistant writes with a scoped `ha-writer` token. Grafana's service account also needs the `server.stats:read` permission, which is new in Grafana v13.
-
-## Repository Scope
-
-This folder is the clean, public version. Secrets — admin and scoped tokens, Grafana credentials — stay on the host in the local environment files and are never committed.
-
-For related incidents and fixes, check out my [Troubleshooting](../TROUBLESHOOTING.md) notes.
+The public Grafana example now requires login; some earlier embedded dashboards used anonymous viewing. Review credentials, storage paths and port exposure before deployment. These repository changes have not been applied to the running lab.

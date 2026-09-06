@@ -1,34 +1,11 @@
-# /etc/metrics/ stack: Grafana + the legacy InfluxDB 2.x container.
-# InfluxDB 2.x is STOPPED — kept as a fallback reference only. Live metrics
-# now run on InfluxDB 3 Enterprise from the separate /etc/influxdb3/ stack.
-# Grafana below connects to InfluxDB 3 over SQL (Flight SQL/gRPC).
+# Grafana example. InfluxDB 3 is defined in influxdb3-compose.yml.
+# Configure the data source separately; this file does not provision it.
+# The former InfluxDB 2 definition is available in Git history.
 services:
-  influxdb:
-    image: influxdb:2.9.1
-    container_name: influxdb
-    restart: unless-stopped
-    ports:
-      - "8086:8086"
-    volumes:
-      - influxdb-data:/var/lib/influxdb2
-      - influxdb-config:/etc/influxdb2
-    environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_ADMIN_USER}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
-      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
-      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
-      - DOCKER_INFLUXDB_INIT_RETENTION=30d
-    networks:
-      - metrics
-
   grafana:
     image: grafana/grafana:13.1.0
     container_name: grafana
     restart: unless-stopped
-    depends_on:
-      - influxdb
     ports:
       - "3000:3000"
     volumes:
@@ -38,15 +15,12 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_DEFAULT_THEME=dark
       - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_SERVER_ROOT_URL=https://grafana.kuzlab.dev
     networks:
       - metrics
 
 volumes:
-  influxdb-data:
-  influxdb-config:
   grafana-data:
 
 networks:

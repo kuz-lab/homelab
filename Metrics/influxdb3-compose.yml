@@ -1,5 +1,5 @@
-# InfluxDB 3 Enterprise (Home license) — deployed as a Portainer Stack, not an /etc file.
-# Live metrics database. Grafana (see docker-compose.yml) reads this over SQL.
+# InfluxDB 3 Enterprise (Home license) — example for a separate Portainer stack.
+# Grafana (see docker-compose.yml) needs a separately configured SQL data source.
 services:
   influxdb3:
     image: influxdb:3-enterprise

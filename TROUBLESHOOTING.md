@@ -1,71 +1,77 @@
 # Troubleshooting Notes
 
-Two real problems I ran into while running this lab, what I found, and how I fixed them.
+Problems I ran into running this lab: what I saw, what I checked, and what I changed. These are accounts of one setup, not universal fixes.
 
----
+[Overview](README.md) · [Network](docs/network-and-access.md) · [Changelog](CHANGELOG.md)
 
-<details>
-<summary><strong>Recurring internet drops — rclone backup was saturating the DSL line</strong></summary>
+## Backup uploads and internet drops
 
-### The problem
+### What happened
 
-Internet dropped a few times over two months. I have a WAN watchdog on OPNsense that detects failures and restarts the PPPoE connection, but the DrayTek modem itself was freezing — software restart wasn't enough, I had to power-cycle it manually.
+The internet dropped a handful of times over about two months. I have a WAN watchdog on OPNsense that restarts the PPPoE connection when it detects a failure, but that was not enough — the DrayTek modem itself was freezing, and I had to power-cycle it by hand.
 
-My DSL line has a low SNR margin (5.7 dB), so I knew heavy uploads could be a problem. I was running a daily rclone backup to Backblaze B2, and I added `--bwlimit 30M` to the script to limit the bandwidth and avoid stressing the line. The drops kept happening anyway.
+The DSL line's SNR margin was around 5.7 dB. I was running scheduled rclone backups to Backblaze B2 and had added `--bwlimit 30M` to leave upload capacity available. The drops kept happening anyway.
 
-### What I found
+After the last one I went back to the watchdog log:
 
-After the last drop I checked the watchdog log:
-
-```
+```text
 2026-05-29 08:14:03 ALL hosts unreachable
 ```
 
-Backup starts at 08:00. Failure 14 minutes later. That timing was suspicious.
+The backup started at 08:00. The failure came fourteen minutes later, which made the upload worth investigating.
 
-I went back to the [rclone docs on bandwidth limiting](https://rclone.org/docs/#bwlimit-bandwidth-spec) and realized the problem — `30M` in rclone means 30 megabytes per second, not 30 megabits. 30 MiB/s is roughly 240 Mbps. My upstream is 47 Mbps. The flag was doing nothing — rclone was still sending at full speed, the line was saturating, DSL was retraining, and the modem was crashing during the retrain.
+### What I found
 
-### What I did
+I had misread the flag. In rclone, `30M` means 30 **MiB per second**, not 30 megabits — roughly 250 Mbps against an upstream of about 47 Mbps. The limit was above the line's capacity, so it could not reserve any upload bandwidth. [rclone bandwidth documentation](https://rclone.org/docs/#bwlimit-bwtimetable)
 
-Changed the limit to `--bwlimit 3.5M` (3.5 MiB/s ≈ 29 Mbps, about 60% of upstream). Checked the OPNsense traffic graphs during the next backup — steady ~30 Mbps, no more saturation. No drops since.
+### What changed
 
-I also set up automated recovery for cases when the modem does freeze: the watchdog tries a software restart first, and if that doesn't help, it calls a Home Assistant webhook that power-cycles the modem through a smart plug.
+I set `--bwlimit 3.5M` — about 29 Mbps, roughly 60% of the upstream — and watched the OPNsense traffic graphs through the next backup. Upload stayed near that level. No further drops were recorded during the follow-up described in my original notes.
 
-Still on my list: calling the ISP to request a higher SNR target on the line, which would make the connection more stable under load.
+I also added a recovery path for the times the modem does freeze: the watchdog attempts a software restart first, and if that fails it calls a Home Assistant webhook that power-cycles the modem through a smart plug.
 
-</details>
+The timing and the ineffective bandwidth limit made upload saturation a useful lead. The improvement after the change supports that explanation, but does not prove why the modem became unresponsive.
 
----
+What I took from it: check the units before replacing the hardware.
 
-<details>
-<summary><strong>UniFi AP not showing up after replacement — cross-VLAN adoption</strong></summary>
+## UniFi adoption across networks
 
-### The problem
+### What happened
 
-My UniFi U6 Plus AP stopped working after a power cycle. Solid white LED, no ping, no SSH, nothing in the ARP table. Reset button didn't respond either — held it for 10, then 20 seconds, LED didn't change. The AP was dead. Got a refund and ordered a U7 Lite as replacement.
+My U6 Plus access point died after a power cycle — solid white LED, no ping, no ARP entry, and no response to the reset button after twenty seconds of holding it. I got a refund and replaced it with a U7 Lite.
 
-While dealing with this I realized something about my setup that was going to keep causing problems: my UniFi controller runs on VLAN 40 (Servers) and the AP sits on VLAN 99 (Management). They're on different networks. Every time I replace or power-cycle an AP, it has no way to find the controller on its own — it doesn't know where to look.
+The UniFi controller runs on the Servers VLAN and the access point sits on Management. In my setup, a replacement device did not have a working way to discover its controller across those networks.
 
-I checked what other people do in this situation. For simple homelabs, most just keep everything on one VLAN. For setups with VLAN segmentation, the common advice ([Ubiquiti community](https://community.ui.com/), [LazyAdmin](https://lazyadmin.nl/)) is to add a DNS entry so the AP can find the controller by resolving the hostname `unifi`. Moving the controller to the management VLAN would break my reverse proxy, dashboard, and firewall rules — not worth it for this.
+Moving the controller would have meant changing its proxy route, dashboard links and firewall rules. I kept it on Servers and investigated how the access point was looking for it.
 
-### What happened with the replacement
+### What I found
 
-The U7 Lite arrived, got power via PoE, and picked up an IP on the network. I could ping it. But in the UniFi controller it showed up with a laptop icon — as a regular device, not as an access point. The controller didn't recognize it as something to manage.
+The U7 Lite came up on PoE, took an address and answered pings. In the controller it appeared as a generic client, not as an access point waiting to be adopted. Ping established basic reachability; it did not test controller discovery or the adoption connection.
 
-I SSH'd into the AP to see what's going on. It was trying to resolve the hostname `unifi` and failing — I had no DNS entry for that. So it had no idea where the controller was.
+I opened a shell on the access point and found it trying to resolve the hostname `unifi`, with no DNS record to answer it. I pointed it at the controller directly:
 
-Pointed it to the controller manually:
-
-```bash
+```sh
 set-inform http://192.168.40.18:8080/inform
 ```
 
-Adopted immediately.
+It adopted immediately.
 
-### Permanent fix
+### What changed
 
-Added a DNS override in OPNsense Unbound: `unifi.localdomain` → `192.168.40.18`. Now any UniFi device on any VLAN can find the controller through DNS without manual intervention. Also set the inform host override in the UniFi controller settings to the same IP.
+I added a DNS override in Unbound for `unifi.localdomain` and set the matching inform-host override in the controller. Devices using that resolver can find the name; routing and firewall rules still control whether they can connect. My documented adoption procedure is to adopt a new device on the controller's VLAN first and move it to Management afterwards.
 
-The adoption procedure I settled on: connect new devices on the controller's VLAN first, let them adopt, then move management to VLAN 99 afterward. Trying to adopt across VLANs without DNS was the whole reason this kept being a pain.
+This was a discovery problem during adoption. It is not evidence that an adopted access point loses its controller on every reboot, and DNS is only part of it — routing and firewall rules still have to allow the connection.
 
-</details>
+The takeaway: a successful ping was useful evidence, but it was only the first test.
+
+## Caddy configuration and certificate storage
+
+A package upgrade removed the Cloudflare module from my early native installation, and later, recreating the Docker container without persistent storage threw away the certificates and the ACME account data.
+
+The [Caddy notes](Caddy/Caddy.md#what-went-wrong) cover the move to Compose and to host directories that survive the container.
+
+## Remote Virtual Desktop over the internet
+
+A VR connection from outside the house initially looked like a mobile-carrier problem. A WAN packet capture showed the connection attempts arriving. That moved the investigation back to my own NAT and firewall configuration, where I found three contributing faults.
+
+[Read the full case study](docs/virtual-desktop-remote-access.md). It describes a setup with internet-facing port forwards, which is deliberately separate from how the rest of the lab is reached.
