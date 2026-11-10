@@ -112,7 +112,43 @@ Paperless is an example:
 
 Other workflows end with a report. Wazuh analysis, for example, produces an explanation of saved findings. Fitness and event collection mainly use ordinary processing.
 
-Infrastructure maintenance runs through a separate fixed service outside the Workbench agent accounts.
+## Audit, updates and remaining CVEs
+
+The maintenance cycle connects Audit, the update controller on Cubi, Wazuh and Workbench.
+
+```mermaid
+flowchart TD
+    Audit["Fresh Audit report and current Wazuh findings"]
+    Plan["Check eligible package updates"]
+    Before["Check backup, services and maintenance window"]
+    Update["Update one machine at a time"]
+    Runtime["Verify services and any required restart"]
+    After["Collect fresh Audit and Wazuh observations"]
+    CVE["Check which CVEs were fixed"]
+    Workbench["Workbench analyses the remaining findings"]
+    Result["Save explanations and possible next steps"]
+
+    Audit --> Plan
+    Plan --> Before
+    Before --> Update
+    Update --> Runtime
+    Runtime --> After
+    After --> CVE
+    CVE --> Workbench
+    Workbench --> Result
+```
+
+Cubi runs the controller during the daily maintenance window. It first requires a fresh, successfully collected Audit report and saves the current Wazuh observations for comparison.
+
+The machines come from a registered list. For each one, the package manager identifies available updates, and the controller checks them against the approved rules. It also checks the existing backup, service state and possible conflicts with other operations.
+
+The controller applies the permitted updates and verifies the result, including a restart where required. A deferred machine or an uncertain outcome stays visible in the cycle’s records.
+
+After the update stage, fresh Audit and Wazuh observations provide the comparison. The checks distinguish a finding disappearing from the scanner from a confirmed fix supported by the installed package version and running system. Cases without enough evidence remain unresolved.
+
+Workbench receives the remaining CVE findings once the required post-update evidence is available. Its analysis explains those findings and suggests what to investigate next.
+
+The controller chooses package updates from the approved rules and current package information. Workbench’s analysis does not supply commands for it to execute. Saved results keep the update outcome, CVE verification and subsequent analysis separate, so a completed package update is not mistaken for a fully resolved security finding.
 
 ## Saved results and interrupted work
 

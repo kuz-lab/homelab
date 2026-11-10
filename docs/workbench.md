@@ -40,13 +40,17 @@ Dates matter here. A saved comparison remains useful, but opening it today does 
 
 ## Security and home-lab reports
 
-The lab produces more technical observations than I want to read one by one.
+I use Audit, automatic maintenance and Workbench as parts of one process: collect the facts, apply permitted updates, check what changed and analyse what remains.
 
-Workbench analyses prepared Wazuh findings and saved Zenarmor network reports. It adds explanations and possible next steps, which I can read beside the original observations.
+The cycle starts with a fresh Audit report and the current Wazuh findings. A controller on Cubi checks the registered machines for eligible system-package updates. It works through them one at a time, checking the backup and service state before proceeding.
 
-Infrastructure audits follow a separate path. Ordinary code collects the scheduled report, and I can request an agent’s analysis of a particular saved version.
+After updating a machine, it checks the running services. Once the update stage is complete, it collects fresh security observations and checks which CVEs have been fixed. Workbench then analyses the remaining findings and adds explanations and possible next steps.
 
-These reports help me decide what deserves investigation. Server maintenance remains a separate process.
+The update list comes from the package manager and rules I have approved. The agents help interpret what remains after those updates.
+
+Zenarmor reports follow a separate path: Workbench reviews saved network observations and returns an explanation tied to that report.
+
+[How the Audit and maintenance cycle works](workbench-internals.md#audit-updates-and-remaining-cves)
 
 ## Larger tasks with a small team
 
