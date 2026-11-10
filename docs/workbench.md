@@ -1,51 +1,86 @@
-# How I use Workbench in my home lab
+# Workbench — what I use it for
 
-When a document arrives in Paperless, I want a useful title, tags and a place in the archive. Workbench receives prepared text from selected documents and proposes that metadata. My integration can apply clear cases under the automatic rules I have enabled. An ambiguous date, a possible duplicate or a document that needs visual inspection stays on the review page. Before applying a change, the integration checks the original document again and then reads back what Paperless actually saved.
+Workbench is my personal workspace for AI-assisted tasks. I build its web console and integrations with AI coding tools, then use them for my own projects and recurring work.
 
-Security reports follow a different path. Workbench can analyse a prepared Wazuh report, check relevant sources and save an explanation of findings and possible next steps. I can read that beside the original observations on my private website. The analysis does not itself update packages or change firewall rules. Those operations have their own permissions and verification.
+Some tasks run regularly, such as reviewing incoming documents or researching products. Others start when I ask: analysing a budget summary, comparing options or working through a development task. The console gives me a place to follow the work and return to its results.
 
-These examples explain why I built Workbench: I wanted the services I already use to produce results I can act on, with the supporting evidence close at hand.
+## Documents and paperwork
 
-[Back to the overview](../README.md)
+I use Paperless to keep my documents. Workbench helps organise what arrives in the inbox.
 
-## The console behind the website
+A daily check prepares text from eligible documents. An agent suggests a useful title, tags, correspondent and document type. The integration checks those suggestions against the original document before applying anything.
 
-Workbench runs on a dedicated virtual machine. My Console application connects the private website to assistant sessions, keeps their history, and tracks assignments. The website provides the everyday interface; the console also lets me return to a particular conversation when it needs an answer or a permission decision.
+Clear cases can be handled under rules I have enabled. An uncertain date, a possible duplicate or a document that needs visual inspection stays for review. After an update, the integration reads back what Paperless actually saved.
 
-Codex connects through its own app-server interface. Claude connects through an ACP adapter that uses the installed Claude client. The code also includes a Gemini CLI connection through ACP and a separate Gemini text-consultant adapter with its own streaming connection. They do not all use the same protocol, and each assistant retains its own capabilities and account requirements. In a team, Gemini's role is limited to reviewing supplied text.
+This leaves me with organised documents and a smaller set of cases that need a decision.
 
-```mermaid
-flowchart TB
-    Website[Private website] --> Console[Console]
-    Console --> Sessions[Assistant sessions]
-    Inputs[Prepared service inputs] --> Workflows[Scheduled workflows]
-    Workflows --> Sessions
-    Sessions --> Result[Saved result]
-    Result --> Website
+## Receipts and budget questions
 
-    Mac[Mac operator] --> Infrastructure[Infrastructure administration]
-```
+Receipts need a different kind of checking. Codex and Claude read the prepared receipt text independently. Code compares their answers, checks the supporting text and looks for possible matches with transactions.
 
-The console provides sessions and work tracking. Scheduled workflows prepare their own inputs and decide when their work is eligible to run. They can use those sessions, but keep their own schedules, permissions and records. The Automations page brings their observations together; it does not replace their individual processes.
+The result is a review report with matching candidates. Category updates, where permitted, go through a separate integration with Actual Budget.
 
-## From a request to an assignment
+Budget analysis starts when I request it. I can ask an agent to examine a prepared budget summary and return suggestions for me to review. Questions about purchases or subscriptions follow a similar pattern: I discuss the choice, receive a proposal and decide what to do.
 
-I can create an assignment with a goal, acceptance criteria, priority and an optional start time. The server keeps the queue moving after I close the browser. Creating a draft or opening a conversation sends nothing. Submitting an assignment queues the requested first turn; it does not change the assistant's existing permissions or approve later tool requests. Account availability, capacity and any required approval still determine whether work can proceed.
+Document organisation, receipt matching and budget analysis are separate jobs. They share information where needed, but each produces its own result.
 
-Assignments shows unfinished requests, Chats contains the conversations, and History keeps earlier cases and settled work. Recurring workflows show their own source dates and outcomes. This helps me distinguish an old failure from something that is still waiting for attention.
+## Research and comparisons
 
-## One agent or a small team
+I also use Workbench for questions that benefit from revisiting sources and keeping the findings together.
 
-For a larger request, a planner can split the work into at most six steps. Each agent gets a fresh conversation with its task, constraints and selected results from earlier steps. A final session brings those results together into one answer attached to the original assignment.
+| Area | What the work produces |
+| --- | --- |
+| **Career research** | Vacancy observations and comparisons within a chosen scope, with source links and dates. |
+| **Product research** | Updates to a catalogue of products I use, including alternatives, exact variants and prices. |
+| **Market watch** | Saved snapshots of new and used asking prices for selected products and configurations. |
 
-Two automatic team sessions can work at once, while capacity remains available for manual use. Independent research can overlap; file-writing work takes turns in the shared project. Separate conversations give each agent focused context, while the existing file and tool permissions still apply. I can open an individual step if it asks a question, or pause future starts without interrupting active work.
+Some research runs on a schedule. Larger comparisons can become individual assignments.
 
-The installed flow has been exercised with a planner, two Codex steps and a final summary. More demanding tasks still need their own checks; successful coordination alone does not prove that every conclusion is correct.
+Dates matter here. A saved comparison remains useful, but opening it today does not make its prices or listings current. The pages keep source dates visible so I can judge whether the material needs another look.
 
-## Checking the result and recovering work
+## Security and home-lab reports
 
-Before showing an answer as current, the application checks which task and conversation turn produced it. Accepting an assignment records my verification against that exact answer and the current criteria. Reading an answer or receiving a notification does not mark the work complete.
+The lab produces more technical observations than I want to read one by one.
 
-Some recurring work can make specifically permitted changes. Documentation maintenance, for example, can propose a correction to selected non-personal guides, obtain a separate review and check the original file before saving it. The improvement controller can inspect selected technical observations and propose only its supported actions. It has no general authority to administer the lab.
+Workbench analyses prepared Wazuh findings and saved Zenarmor network reports. It adds explanations and possible next steps, which I can read beside the original observations.
 
-If a connection drops after a request was sent, Workbench looks for the outcome of that same request. It does not send a replacement merely because the reply is missing. Saved answers and earlier attempts remain available for investigation. That recovery behaviour matters as much to me as the first successful run: I want to continue useful work without losing its history or accidentally repeating it.
+Infrastructure audits follow a separate path. Ordinary code collects the scheduled report, and I can request an agent’s analysis of a particular saved version.
+
+These reports help me decide what deserves investigation. Server maintenance remains a separate process.
+
+## Larger tasks with a small team
+
+For a larger assignment, I can ask Workbench to divide the work between agents.
+
+I describe the goal and what a useful result should contain. A planning step divides the task, individual agents work on their parts, and a final step brings the findings together.
+
+From the console, I can follow the stages and open an individual conversation if it needs my attention. The result comes back to the original assignment, alongside the criteria I set.
+
+I use the same interface for a single assistant when splitting the task would add little.
+
+## Data collection behind the pages
+
+Several parts of the workspace use ordinary collectors and calculations.
+
+| Area | What happens |
+| --- | --- |
+| **Fitness** | Garmin and TrainHeroic data is collected and used to calculate summaries for my private fitness pages. |
+| **Events** | Venue programmes become listings with source dates and coverage. A separate calendar connection helps me compare events with work commitments. |
+| **Home observation** | Selected Home Assistant states are checked for availability problems and changes that may need attention. |
+| **Infrastructure audit** | Scheduled checks collect information about the machines and services in the lab. |
+
+These processes provide useful information without calling a model for every update. An agent can then help with a specific question where interpretation adds value.
+
+## Working with the results
+
+The console separates current assignments, conversations, history and recurring workflows. I can see what is still running, what has produced an answer and what needs a decision.
+
+Work runs on the server, so my browser and Mac do not need to stay open. Results remain attached to their conversations, and I can continue from them later.
+
+Questions and problems needing my attention are sent promptly. Routine results and documentation updates are grouped into a daily digest.
+
+The part I keep developing is this connection between a request and a usable result: giving agents the right material, checking their work and making it easy to return to what they have done.
+
+**[How Workbench works — the console, agents and task execution](workbench-internals.md)**
+
+[Back to the home lab overview](../README.md)

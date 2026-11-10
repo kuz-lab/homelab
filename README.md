@@ -22,7 +22,7 @@ The physical layout is shown above; the NUT annotations still reflect an earlier
 | **Containers and storage** | Docker Compose defines application stacks, with Portainer and a private Gitea repository used to manage them. Persistent data stays outside Docker's writable layers, inside the owning VM or LXC guest. Native Proxmox backups include the guest and its data. [Services and examples](docs/services.md) |
 | **Monitoring** | Uptime Kuma checks reachability, Beszel shows host vitals, Grafana with InfluxDB 3 keeps metric history, and Wazuh collects security events and vulnerability findings. Gatus on the Pi checks services from outside Cubi. Pushover is the main notification channel; ntfy remains for existing integrations. [How the layers fit](docs/services.md#monitoring-and-dashboards) |
 | **Backups and power** | Proxmox backups go to a separate local SSD, with selected copies in Backblaze B2. Workbench backups stay local-only. NUT on Cubi monitors the Eaton UPS; the current full shutdown and recovery sequence has not been retested. [Coverage, restores and known gaps](docs/backups-and-recovery.md) |
-| **Agent workspace** | Workbench brings different agents into a custom web console for tasks, conversations, team workflows and saved results. [How Workbench works](docs/workbench.md) |
+| **Agent workspace** | Workbench brings different agents into a custom web console for tasks, conversations, team workflows and saved results. [Workbench use cases](docs/workbench.md) |
 
 ## Problems I worked through
 
@@ -58,7 +58,7 @@ Recurring workflows include document metadata triage in Paperless and reports fr
 
 This is the part of the lab I am actively developing: trying different models, improving how agents share work, and making longer tasks easier to follow and resume.
 
-[Workbench architecture and workflows](docs/workbench.md)
+[Workbench use cases](docs/workbench.md) · [How Workbench works](docs/workbench-internals.md)
 
 The [changelog](CHANGELOG.md) records how the lab got here.
 
@@ -67,7 +67,8 @@ The [changelog](CHANGELOG.md) records how the lab got here.
 - [Hardware, photos and screenshots](SETUP.md)
 - [Network and access](docs/network-and-access.md)
 - [Selected services and configuration examples](docs/services.md)
-- [Workbench architecture and workflows](docs/workbench.md)
+- [Workbench use cases](docs/workbench.md)
+- [How Workbench works](docs/workbench-internals.md)
 - [Backups and recovery](docs/backups-and-recovery.md)
 - [Troubleshooting notes](TROUBLESHOOTING.md)
 - [Case study: remote VR access through NAT and firewall rules](docs/virtual-desktop-remote-access.md)
