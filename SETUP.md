@@ -50,9 +50,9 @@ The drawings record earlier stages of the lab. The written [network notes](docs/
 
 ## Rack
 
-![Rack front with the modem, network equipment, labelled patch panel and the Eaton UPS beside it](photos/HomerackFront-2026-09.jpg)
+![Rack front with the modem, network equipment, labelled patch panel and the Eaton UPS beside it](photos/HomerackFront-2026-11.jpg)
 
-The labelled patch panel helps me trace connections when changing or troubleshooting equipment. September 2026.
+The labelled patch panel helps me trace connections when changing or troubleshooting equipment. November 2026. [Earlier rack photo](photos/HomerackFront-2026-09.jpg).
 
 ## Workspace
 
@@ -71,7 +71,7 @@ Where I actually work on this: a MacBook Pro with Dell and Philips monitors. The
 
 ![Homarr dashboard with service links, status widgets and resource graphs](screenshots/Homarr.png)
 
-The main dashboard: service links, host resources and monitoring widgets on one page, pulling live data from each service rather than just linking to it.
+An earlier dashboard with service links, host resources and monitoring widgets. Homarr was retired in October 2026; the current Homepage view is shown below.
 
 ### Grafana
 
@@ -92,9 +92,9 @@ Reachability checks and recent events, with failures pushed to ntfy. The event h
 
 ### Homepage
 
-![Homepage dashboard with network status and service links](screenshots/Homepage.png)
+![Homepage with a custom host-resource panel, network status and service groups, November 2026](screenshots/Homepage-2026-11.png)
 
-The dashboard I started with. It still runs alongside Homarr while a few monitors and one firewall rule still point at it.
+Homepage combines service links and status widgets with a custom resource panel for Cubi, ZimaBoard and Raspberry Pi. This capture is from 10 November 2026. [Earlier Homepage layout](screenshots/Homepage.png).
 
 ### Portainer
 

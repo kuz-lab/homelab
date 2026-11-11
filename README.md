@@ -4,7 +4,7 @@ I run this home lab for my network, photos, documents and home automation. Here 
 
 An MSI Cubi runs the applications in Proxmox VMs and Linux containers. A separate ZimaBoard runs OPNsense for routing and firewalling. A Raspberry Pi provides a second DNS server and monitoring outside the applications host. The lab also hosts Workbench, my workspace for AI agents and recurring tasks.
 
-<a href="photos/HomerackFront-2026-09.jpg"><img src="photos/HomerackFront-2026-09.jpg" alt="My home lab rack and Eaton UPS, September 2026" width="380"></a>
+<a href="photos/HomerackFront-2026-11.jpg"><img src="photos/HomerackFront-2026-11.jpg" alt="My home lab rack and Eaton UPS, November 2026" width="380"></a>
 
 The router used to share a host with the applications. Moving it to its own machine means I can work on Cubi without taking down routing too. DNS now runs on both Cubi and the Raspberry Pi, although they still share the switch and power setup.
 
