@@ -30,6 +30,8 @@ Home Assistant connects the devices and provides the controls and dashboards. So
 
 Devices connect over Zigbee, Thread, Wi-Fi and Bluetooth. ESPHome handles the [e-paper display](HomeAssistant/esphome/epaper.yaml) and [Bluetooth proxies](HomeAssistant/esphome/ble-proxy.yaml).
 
+The SLZB-MR5U handles Zigbee and runs the Thread Border Router (TBR) directly on the device. I moved the whole Thread network to it when I bought it, and it has been running there ever since.
+
 [Workbench (AI Agent harness)](docs/workbench.md) can inspect device availability through HA Observer and help investigate problems. The observer collects status and sends notifications on its own. Agents can read those observations, but changes remain a separate step.
 
 The dashboards include a 3D view of the apartment with device status. An [earlier dashboard screenshot](screenshots/HAOS.png) shows a previous version of the interface.

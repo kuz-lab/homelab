@@ -21,7 +21,7 @@ The rack in November 2026. The labelled patch panel helps me trace connections w
 | Switch | UniFi USW-Lite-8-PoE | Wired connections, PoE and VLAN trunking |
 | Access point | UniFi U7 Lite | Wi-Fi for personal, smart-home and guest devices |
 | UPS | Eaton Ellipse PRO 650 | Backup power, monitored through NUT on Cubi |
-| Coordinator | SMLIGHT SLZB-MR5U | Zigbee/Thread connectivity |
+| Zigbee and Thread | SMLIGHT SLZB-MR5U | Zigbee coordinator and built-in Thread Border Router (TBR), serving the whole Thread network |
 | Rack | Waveshare HomeRack 8U, 10-inch | Network equipment and hosts |
 
 Cubi uses a Samsung 990 PRO NVMe and a Crucial BX500 SATA SSD. The Raspberry Pi boots from its USB SSD.
