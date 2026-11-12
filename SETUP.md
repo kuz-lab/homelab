@@ -56,4 +56,10 @@ Homepage is my infrastructure landing page. I added a resource panel for Cubi, Z
 
 The preview shows the top of the page on 10 November 2026. [Open the full screenshot](screenshots/Homepage-2026-11.png).
 
+## Running cost
+
+Keeping the lab running costs about **€13 a month** in electricity, including the UPS. Here’s October as an example.
+
+![Homelab electricity use and running cost, with October 2026 as an example](screenshots/Homelab-energy-2026-10.png)
+
 [Back to the overview](README.md)
