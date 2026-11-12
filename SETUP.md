@@ -1,143 +1,59 @@
-# Hardware, Photos and Screenshots
+# Hardware and Setup
 
-The equipment behind the lab, and what its dashboards look like.
+The equipment behind my home lab, where the services run, and the dashboard I use to keep an eye on it.
 
-The screenshots were captured at different times as the lab changed. Treat the numbers in them as a snapshot of that moment rather than a current status.
+Host hardware and service placement checked on 10–11 November 2026.
 
-[Overview](README.md) · [Network](docs/network-and-access.md) · [Services](docs/services.md) · [Changelog](CHANGELOG.md)
+[Overview](README.md) · [Network](docs/network-and-access.md) · [Services](docs/services.md) · [Workbench](docs/workbench.md) · [Changelog](CHANGELOG.md)
+
+![Rack with network equipment, labelled patch panel, Raspberry Pi and Eaton UPS](photos/HomerackFront-2026-11.jpg)
+
+The rack in November 2026. The labelled patch panel helps me trace connections when changing or troubleshooting equipment.
 
 ## Hardware
 
 | Device | Hardware | Role |
 | --- | --- | --- |
-| Cubi | MSI Cubi, Intel i5-120U, 40 GB RAM, 1 TB NVMe and 1 TB SATA SSD | Proxmox host for the applications |
-| ZimaBoard | ZimaBoard 2 N150, 16 GB RAM, 512 GB NVMe, 2× i226-V 2.5 GbE | Separate Proxmox host for OPNsense |
-| Raspberry Pi | Raspberry Pi 5, 8 GB RAM, 512 GB SSD | Installed and reachable; a separate SSH bastion is the next proposed role |
+| Cubi | MSI Cubi NUC 1M, Intel Core 5 120U, 40 GB DDR5, 1 TB NVMe and 1 TB SATA SSD | Proxmox applications host |
+| ZimaBoard | ZimaBoard 2, Intel N150, 16 GB RAM, 512 GB NVMe, two Intel I226-V 2.5 GbE ports | Separate Proxmox host for OPNsense |
+| Raspberry Pi | Raspberry Pi 5, 8 GB RAM, 512 GB USB SSD | Secondary DNS and independent availability monitoring |
 | Modem | DrayTek Vigor 167 | DSL modem in bridge mode |
-| Switch | UniFi USW-Lite-8-PoE | Wired connections and VLAN trunking |
+| Switch | UniFi USW-Lite-8-PoE | Wired connections, PoE and VLAN trunking |
 | Access point | UniFi U7 Lite | Wi-Fi for personal, smart-home and guest devices |
-| UPS | Eaton Ellipse PRO 650 | Backup power and shutdown signalling |
-| Zigbee/Thread coordinator | SMLIGHT SLZB-MR5U | Smart-home device connectivity |
-| Rack | Waveshare HomeRack 8U, 10-inch | Houses the network equipment and the two hosts |
+| UPS | Eaton Ellipse PRO 650 | Backup power, monitored through NUT on Cubi |
+| Coordinator | SMLIGHT SLZB-MR5U | Zigbee/Thread connectivity |
+| Rack | Waveshare HomeRack 8U, 10-inch | Network equipment and hosts |
 
-### Switch ports
+Cubi uses a Samsung 990 PRO NVMe and a Crucial BX500 SATA SSD. The Raspberry Pi boots from its USB SSD.
 
-Physical port notes from the earlier layout, not a current export of the switch's VLAN profiles:
+## Where things run
 
-| Port | Device | Notes |
-| --- | --- | --- |
-| 1 | U7 Lite access point | PoE and the Wi-Fi VLANs |
-| 3 | Break-glass | Management VLAN only, for physical recovery |
-| 4 | SLZB-MR5U | Zigbee/Thread coordinator, PoE+ |
-| 5 | Wired fallback | Trusted VLAN, for when Wi-Fi is the problem |
-| 6 | Raspberry Pi | Second physical machine for future support roles |
-| 7 | Cubi | Tagged networks for the applications host |
-| 8 | ZimaBoard | VLAN trunk to OPNsense |
+Cubi runs most of the lab. Keeping OPNsense on ZimaBoard lets me work on the applications host while routing stays on its own machine. The Pi provides a second DNS server and availability checks outside Cubi, although the machines still share network and power equipment.
 
-<details>
-<summary>Physical layout and earlier design sketches</summary>
+| Location | Main services |
+| --- | --- |
+| Cubi — application containers | Immich, Paperless-ngx, Node-RED, Actual Budget, Vaultwarden, Gitea, Stirling-PDF and Fredy |
+| Cubi — web services | Caddy and the private application, Homepage, Finance Hub and Authentik |
+| Cubi — monitoring and management | Grafana, InfluxDB and Explorer; Portainer, Beszel and PeaNUT; Uptime Kuma |
+| Cubi — DNS | Primary Technitium DNS |
+| Cubi — dedicated VMs | Home Assistant OS, UniFi OS, Wazuh and Workbench |
+| ZimaBoard | OPNsense VM |
+| Raspberry Pi | Secondary Technitium DNS, Gatus checks and scheduled backups of the Pi itself |
 
-![Physical layout of the modem, firewall host, switch, access point and services host](diagrams/Physical_topology.png)
-
-The drawings record earlier stages of the lab. The written [network notes](docs/network-and-access.md) and [service inventory](docs/services.md) describe later changes.
-
-- [DNS and access paths](diagrams/ingress-dns-access.png)
-- [VLAN policy sketch](diagrams/vlan-policy-matrix.png)
-- [Earlier service map](diagrams/service-map-by-host.png)
-- [Power and WAN recovery](diagrams/power-wan-recovery.png)
-
-</details>
-
-## Rack
-
-![Rack front with the modem, network equipment, labelled patch panel and the Eaton UPS beside it](photos/HomerackFront-2026-11.jpg)
-
-The labelled patch panel helps me trace connections when changing or troubleshooting equipment. November 2026. [Earlier rack photo](photos/HomerackFront-2026-09.jpg).
+I administer the infrastructure from the Mac. Scheduled maintenance runs on Cubi; Workbench handles personal agent sessions and analysis. [How Workbench fits together](docs/workbench-internals.md).
 
 ## Workspace
 
-<details>
-<summary>Desk, displays and the Home Assistant e-paper project</summary>
+![Workspace with two monitors, a MacBook, an e-paper display and a CO2 monitor](photos/Workplace-2026-11.jpg)
 
-![Workspace with two monitors, a MacBook, an e-paper display and a CO2 monitor](photos/Workplace.jpg)
+My workspace in November 2026: a MacBook Pro with two external monitors. The e-paper display is driven by Home Assistant through ESPHome; the small Aranet4 next to it monitors CO₂. [Home-automation notes](HomeAssistant.md)
 
-Where I actually work on this: a MacBook Pro with Dell and Philips monitors. The e-paper display is driven by Home Assistant over ESPHome; the small Aranet4 next to it monitors CO2.
+## Homepage
 
-</details>
+[![The top of Homepage with the three-host resource panel, daily-use links and network cards](screenshots/Homepage-2026-11-preview.png)](screenshots/Homepage-2026-11.png)
 
-## Dashboards
+Homepage is my infrastructure landing page. I added a resource panel for Cubi, ZimaBoard and Raspberry Pi above the service links and status widgets. It brings together host resources, DNS, availability checks and UPS readings.
 
-### Homarr
-
-![Homarr dashboard with service links, status widgets and resource graphs](screenshots/Homarr.png)
-
-An earlier dashboard with service links, host resources and monitoring widgets. Homarr was retired in October 2026; the current Homepage view is shown below.
-
-### Grafana
-
-![Grafana dashboard showing power measurements and energy-use graphs](screenshots/Grafana_Proxmox.png)
-
-Power use, backed by InfluxDB. The annual figures in this capture were extrapolated from a short observation window, so they are an early estimate rather than measured consumption. [Metrics notes](Metrics/Metrics.md)
-
-### Uptime Kuma
-
-![Uptime Kuma monitor list, availability history and events](screenshots/UptimeKuma.png)
-
-Reachability checks and recent events, with failures pushed to ntfy. The event history is useful for comparing an outage with a backup or maintenance window.
-
-## More screenshots
-
-<details>
-<summary>Management interfaces and earlier dashboards</summary>
-
-### Homepage
-
-![Homepage with a custom host-resource panel, network status and service groups, November 2026](screenshots/Homepage-2026-11.png)
-
-Homepage combines service links and status widgets with a custom resource panel for Cubi, ZimaBoard and Raspberry Pi. This capture is from 10 November 2026. [Earlier Homepage layout](screenshots/Homepage.png).
-
-### Portainer
-
-![Portainer showing multiple Docker environments](screenshots/Portainer.png)
-
-Every Docker LXC runs its own daemon; Portainer's agents bring them into one interface.
-
-### Proxmox — Cubi
-
-![Proxmox Cubi view with the guest list and host console](screenshots/ProxmoxCubi.png)
-
-The applications host, with its guest list and task history.
-
-### Proxmox — ZimaBoard
-
-![Proxmox ZimaBoard view with the OPNsense virtual machine](screenshots/ProxmoxZima.png)
-
-The firewall host. One VM, on purpose — its job is to keep routing while I work on everything else. [Backup schedule](docs/backups-and-recovery.md)
-
-### Home Assistant
-
-![Home Assistant dashboard with infrastructure and power-status cards](screenshots/HAOS.png)
-
-Host, network and UPS information pulled into Home Assistant alongside the home automation. [Home-automation notes](HomeAssistant.md)
-
-### OPNsense
-
-![OPNsense dashboard with interfaces and traffic graphs](screenshots/OPNsense.png)
-
-The router dashboard. The firewall policy itself is in [firewall-rules.csv](OPNsense/firewall-rules.csv).
-
-### AdGuard Home
-
-![AdGuard Home dashboard with DNS-query and filtering statistics](screenshots/adguard.png)
-
-DNS filtering for the client VLANs. Servers deliberately bypass it and query Unbound directly.
-
-### UniFi Network
-
-![UniFi topology view with the switch, access point and connected clients](screenshots/Unifi.png)
-
-The controller's view of wired and wireless clients. Virtual machines can appear as separate clients behind one physical port, so this is not a literal cable diagram. [The adoption problem](TROUBLESHOOTING.md#unifi-adoption-across-networks)
-
-</details>
+The preview shows the top of the page on 10 November 2026. [Open the full screenshot](screenshots/Homepage-2026-11.png).
 
 [Back to the overview](README.md)

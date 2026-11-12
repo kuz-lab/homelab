@@ -2,7 +2,7 @@
 
 Grafana shows how power use, temperatures and system resources change over time. InfluxDB stores the measurements behind the charts.
 
-[Overview](../README.md) · [Services](../docs/services.md) · [Dashboard screenshot](../SETUP.md#grafana)
+[Overview](../README.md) · [Services](../docs/services.md) · [Earlier dashboard screenshot](../screenshots/Grafana_Proxmox.png)
 
 ## What the charts are for
 

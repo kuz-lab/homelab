@@ -2,7 +2,7 @@
 
 Home Assistant runs the home automation and the device dashboards, as VM 202 on Cubi — deliberately on the applications host rather than anywhere near the router.
 
-[Overview](README.md) · [Selected services](docs/services.md) · [Dashboard example](SETUP.md#home-assistant)
+[Overview](README.md) · [Selected services](docs/services.md) · [Earlier dashboard example](screenshots/HAOS.png)
 
 ## Devices and examples
 
