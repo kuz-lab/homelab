@@ -61,7 +61,7 @@ ntfy remains for older integrations. [Homepage screenshot](../SETUP.md#homepage)
 
 Wazuh got me looking more closely at updates: a service could be running normally while its packages still needed attention.
 
-Audit collects information about the machines. Scheduled OS maintenance runs on Cubi, checks the results of updates, and feeds fresh findings into Workbench for analysis of the remaining CVEs. [How the update cycle works](workbench-internals.md#audit-updates-and-remaining-cves).
+Audit and scheduled maintenance on Cubi handle the checks and permitted updates. Workbench helps explain the CVEs left afterwards. [How the update cycle works](workbench-internals.md#audit-updates-and-remaining-cves).
 
 ## Configuration and management
 

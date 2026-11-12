@@ -16,13 +16,11 @@ This leaves me with organised documents and a smaller set of cases that need a d
 
 ## Receipts and budget questions
 
-Receipts need a different kind of checking. Codex and Claude read the prepared receipt text independently. Code compares their answers, checks the supporting text and looks for possible matches with transactions.
+Codex and Claude read receipt text independently. The integration compares their answers, checks the source text and looks for matching transactions.
 
-The result is a review report with matching candidates. Eligible expenses can receive categories automatically under rules I have enabled, through a separate integration with Actual Budget.
+I get possible matches to review. Some expenses get a category in Actual Budget automatically, following rules I set up.
 
-Budget reviews run weekly, when significant changes need another look, or when I request one. I can ask an agent to examine a prepared budget summary and return suggestions for me to review. Questions about purchases or subscriptions follow a similar pattern: I discuss the choice, receive a proposal and decide what to do.
-
-Document organisation, receipt matching and budget analysis are separate jobs. They share information where needed, but each produces its own result.
+Budget reviews run weekly, when significant changes need another look, or when I request one. I also use Workbench to compare purchases and subscriptions before deciding what to do.
 
 ## Research and comparisons
 
@@ -40,15 +38,9 @@ Dates matter here. A saved comparison remains useful, but opening it today does 
 
 ## Security and home-lab reports
 
-I use Audit, automatic maintenance and Workbench as parts of one process: collect the facts, apply permitted updates, check what changed and analyse what remains.
+Audit collects the state of the machines. Scheduled maintenance on Cubi applies permitted updates and checks the services and CVEs again. Workbench analyses what remains and suggests what to investigate next.
 
-The cycle starts with a fresh Audit report and the current Wazuh findings. A controller on Cubi checks the registered machines for eligible system-package updates. It works through them one at a time, checking the backup and service state before proceeding.
-
-After updating a machine, it checks the running services. Once the update stage is complete, it collects fresh security observations and checks which CVEs have been fixed. Workbench then analyses the remaining findings and adds explanations and possible next steps.
-
-The update list comes from the package manager and rules I have approved. The agents help interpret what remains after those updates.
-
-Zenarmor reports follow a separate path: Workbench reviews saved network observations and returns an explanation tied to that report.
+I also use Workbench to review saved Zenarmor network reports and explain the findings.
 
 [How the Audit and maintenance cycle works](workbench-internals.md#audit-updates-and-remaining-cves)
 

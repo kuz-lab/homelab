@@ -44,26 +44,19 @@ Most of the early setup was manual, working from project documentation and commu
 
 [How SSH access and automation developed](docs/network-and-access.md#administration)
 
-## Workbench — an agent harness with a custom web console
+## Workbench
 
-Workbench is where I develop and use AI agents for my own projects and recurring tasks. It runs on a dedicated VM, with a custom task service and web console that I build with AI coding tools.
+Workbench is where I use AI agents for my projects and recurring tasks. It runs on a dedicated VM, with a web console and integrations I build with AI coding tools. I can submit work, follow its progress and return to the results without keeping my Mac open.
 
-The harness organises the work around the agents: requests, project context, conversations and saved results. I can submit a task, follow its progress and return to it later. Work runs on the server, so my Mac does not need to stay open.
+I use it to organise documents in Paperless, review receipts and budgets, research products and understand security reports. Larger assignments can be split between agents and brought back as one result.
 
-Codex and Claude are the main working agents. They connect through separate adapters: Codex through its app-server and Claude through the Agent Client Protocol (ACP). There is also a Gemini integration for reviewing supplied material. The adapter layer gives me a way to add and test other assistants while keeping the same console.
-
-For larger tasks, a planning step divides the work, workers receive focused instructions in separate conversations, and a final step brings their findings together. Relevant results pass between steps, without giving every agent the full conversation history.
-
-Recurring workflows include document metadata triage in Paperless and reports from Wazuh findings. Other jobs use ordinary scripts and collectors where a model is not needed. Workbench works within assigned projects and integrations, without general administrative access to the lab.
-
-This is the part of the lab I am actively developing: trying different models, improving how agents share work, and making longer tasks easier to follow and resume.
+Codex and Claude are the main working agents; Gemini also helps review material. Separate adapters let me try other assistants through the same console. This is the part I keep developing: how agents share work, use project context and carry longer tasks through to a useful result.
 
 [Workbench use cases](docs/workbench.md) · [How Workbench works](docs/workbench-internals.md)
 
-The [changelog](CHANGELOG.md) records how the lab got here.
-
 ## Look closer
 
+- [How the lab developed](CHANGELOG.md)
 - [Hardware, photos and screenshots](SETUP.md)
 - [Network and access](docs/network-and-access.md)
 - [Selected services and configuration examples](docs/services.md)

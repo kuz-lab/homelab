@@ -158,21 +158,19 @@ A later conversation turn or a change to the criteria can make the earlier revie
 
 If a connection drops after a request was sent, the system checks the original request rather than immediately sending another copy. An uncertain outcome can hold new queue work until it is understood.
 
+If a Wazuh report has been saved but not delivered, a separate background process can retry delivery without running the analysis again.
+
 Other situations are more straightforward: a task may need my answer, a permission decision or an available provider. The console keeps that state visible so I can return to the right conversation.
 
 Notifications help separate attention from routine activity. Questions and important problems are sent promptly. Ordinary results are grouped into a daily digest, without a separate notification for every internal team step.
 
 ## Documentation upkeep
 
-One practical use of agents inside Workbench is maintaining selected guides.
+I also use Workbench to keep selected project guides up to date. Checks look for broken links, repeated material and changes that may leave the guides behind.
 
-Ordinary checks look for broken links, duplicated material and changes that may leave documentation out of date. An agent prepares a correction, and a separate agent reviews that exact proposal.
+An agent proposes a correction, and another reviews it. Before saving, the integration checks that the original file has not changed and that the links still work. It then reads the saved file back.
 
-Before saving it, the application checks the target, the original file version and the links. It reads the saved file back afterwards. The report keeps completed changes and remaining issues visible.
-
-A separate background controller considers a small set of supported recovery actions. Its current action concerns delivering already-saved Wazuh results through the existing integration. It checks whether the action is applicable and verifies the outcome.
-
-I develop these pieces around specific tasks with visible results. That gives me something concrete to test before extending what the system can do.
+The report shows what changed and what still needs attention.
 
 **[Back to Workbench use cases](workbench.md)**
 
