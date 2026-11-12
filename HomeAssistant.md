@@ -1,17 +1,65 @@
 # Home Assistant
 
-Home Assistant runs the home automation and the device dashboards, as VM 202 on Cubi — deliberately on the applications host rather than anywhere near the router.
+Home Assistant handles heating, lighting and everyday reminders at home. It runs as a VM on Cubi, separate from the router.
 
-[Overview](README.md) · [Selected services](docs/services.md) · [Earlier dashboard example](screenshots/HAOS.png)
+[Overview](README.md) · [Services](docs/services.md) · [Backups and Recovery](docs/backups-and-recovery.md)
+
+## Everyday use
+
+### Heating
+
+Heating follows working days and days off from my calendar. I edit the calendar on my phone, and the automations use it to choose the day’s heating mode.
+
+It also handles ventilation and temporary warming. If I manually turn a room’s heating off, the automation respects that.
+
+### Lighting
+
+Motion turns the bathroom lights on, and presence sensors help keep them on while someone is still there.
+
+Physical controls are part of the setup too: buttons for switching lights, changing scenes and adjusting brightness.
+
+### Reminders
+
+I added a reminder for open windows: opening the entrance door while a window is still open triggers a phone notification listing the open windows.
+
+There are also notifications for low batteries and unavailable battery-powered sensors. The air purifier follows a daily schedule, with manual control between scheduled changes.
+
+## How it fits together
+
+Home Assistant connects the devices and provides the controls and dashboards. Some automations run directly in Home Assistant; others run in Node-RED.
+
+[Workbench (AI Agent harness)](docs/workbench.md) can inspect device availability through HA Observer and help investigate problems. The observer collects status and sends notifications on its own. Agents can read those observations, but changes remain a separate step.
+
+The dashboards include a 3D view of the apartment with device status. An [earlier dashboard screenshot](screenshots/HAOS.png) shows a previous version of the interface.
 
 ## Devices and examples
 
-- **E-paper display:** renders a dashboard image and sleeps between updates, which is what makes battery life usable. [ESPHome example](HomeAssistant/esphome/epaper.yaml)
-- **Bluetooth proxies:** ESP32 boards that extend Bluetooth range so sensors in other rooms reach Home Assistant. [ESPHome example](HomeAssistant/esphome/ble-proxy.yaml)
-- **Zigbee and Thread:** an SMLIGHT SLZB-MR5U coordinator over PoE, not documented here yet.
+**E-paper display.** An ESP32 downloads a prepared dashboard image, updates the display and sleeps until the next update.
 
-Home Assistant is also the recovery path for the modem: when the WAN watchdog cannot fix a drop in software, it triggers a smart plug to power-cycle it. [How that came about](TROUBLESHOOTING.md#backup-uploads-and-internet-drops)
+[ESPHome example](HomeAssistant/esphome/epaper.yaml)
 
-The ESPHome files are specific to my boards and my wiring. Review the pins, addresses and secrets before flashing anything with them.
+**Bluetooth proxies.** ESP32 boards connect Bluetooth devices back to Home Assistant over the network, extending coverage to other rooms.
 
-Automations and dashboard YAML are not published here.
+[ESPHome example](HomeAssistant/esphome/ble-proxy.yaml)
+
+**Zigbee and Thread.** The [SMLIGHT SLZB-MR5U](https://smlight.tech/products/slzb-mr5u) supports both protocols. My Zigbee network connects through it over Ethernet, with power supplied by PoE.
+
+The ESPHome files are examples for my boards and wiring. They need adapting before use on other hardware.
+
+## When the modem stopped responding
+
+A few internet outages needed more than restarting the connection: the modem had frozen, and I had to power-cycle it manually.
+
+I added a recovery step to the WAN watchdog. It tries a software restart first. If that fails, it asks Home Assistant to cycle the modem’s power through a smart plug.
+
+Investigating those outages also led me to a mistake in the backup upload limit: I had mixed up megabytes and megabits.
+
+[The full story](TROUBLESHOOTING.md#backup-uploads-and-internet-drops)
+
+## Backups and recovery
+
+Home Assistant is included in the full VM backups on Cubi, with a verified copy in Backblaze B2.
+
+I previously restored it into a different VM ID, and it came back. That was a useful recovery test for the setup at the time.
+
+[How backups and recovery work](docs/backups-and-recovery.md)
