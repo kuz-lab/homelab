@@ -1,66 +1,67 @@
 # Backups and Recovery
 
-Local Proxmox backups to a separate SSD, with selected copies going off-site to Backblaze B2. The part that matters is not having archives — it is knowing whether they contain everything needed to bring a service back.
+I keep full backups of my VMs and containers on a separate SSD in Cubi, with another copy in Backblaze B2. Local copies are useful for a quick restore; B2 keeps a copy outside the house.
 
 [Overview](../README.md) · [Services](services.md) · [Troubleshooting](../TROUBLESHOOTING.md)
 
-## What is stored where
+## What I back up
 
-| Data | Local | Off-site |
+| System | Local backup | Cloud copy |
 | --- | --- | --- |
-| VM and LXC backups | Proxmox vzdump archives on Cubi's separate SSD | Selected archives copied to B2 |
-| OPNsense VM | Backed up from ZimaBoard to Cubi over NFS | Included in the archive transfer |
-| Immich media | The original library on Cubi's SSD, outside the LXC root filesystem | Its own separate transfer to B2 |
-| Application state | Service-state archives | Encrypted transfer, only if the local state run succeeded |
+| VMs and containers on Cubi | Full Proxmox backups on a separate SSD | Backblaze B2 |
+| OPNsense on ZimaBoard | Full VM backup sent to Cubi over NFS | Backblaze B2 |
+| Raspberry Pi | System backup made with raspiBackup and stored on Cubi | Backblaze B2 |
 
-The media folder is the working library, not a second local copy. The photo backup design therefore has two locations — local media and B2 — rather than a full three-copy arrangement.
+All 23 Proxmox guests and the Raspberry Pi have at least one verified cloud copy. This includes Workbench (AI agent harness), Finance Hub, Authentik and the Windows VM.
+
+Application data and settings stay inside their VM or container. For Immich, that means the photos, database and configuration are included together in the full container backup.
+
+```mermaid
+flowchart LR
+    Cubi["VMs and containers on Cubi"] --> Local["Backup SSD on Cubi"]
+    Zima["OPNsense on ZimaBoard"] --> Local
+    Pi["Raspberry Pi system backup"] --> Local
+    Local --> B2["Backblaze B2"]
+```
 
 ## Schedule
 
-Times are local.
+All times are local to Berlin.
 
 | Job | Schedule |
 | --- | --- |
-| OPNsense VM | Mon, Wed, Fri at 03:00 |
-| Critical services — Gitea, Paperless, Vaultwarden, Immich | Mon, Wed, Fri at 03:30 |
-| Supporting services — metrics, Caddy, dashboards | Mon and Wed at 04:00 |
-| Application state | Mon, Wed, Fri at 05:00 |
-| Transfer to B2 | Mon, Wed, Fri at 08:00 |
+| Raspberry Pi | Monday, Wednesday and Friday at 02:00 |
+| OPNsense VM | Monday, Wednesday and Friday at 03:00 |
+| Main services and VMs | Monday, Wednesday and Friday at 03:30 |
+| Other containers, including Finance Hub | Monday and Wednesday at 04:00 |
+| Immich | Monday, Wednesday and Friday at 04:30 |
+| Transfer to B2 | Monday, Wednesday and Friday at 08:00 |
 | Windows VM | Monthly |
 
-Some of these use stop mode, which interrupts the guest for the duration. They are scheduled maintenance windows, not zero-downtime backups.
+Some guests are stopped while their backup runs. These are scheduled maintenance windows.
 
-## The thing a Proxmox archive does not include
+## Cloud copies and checks
 
-A vzdump archive does not necessarily contain directories mounted in from the host. The Immich backup log excludes its media bind mount explicitly — which is correct behaviour, and also exactly the kind of detail that turns a backup into a false sense of security. That media needs its own path off the machine, which is why it has a separate B2 transfer.
+The cloud job checks the latest completed local backups. If the same verified copy is already in B2, it is left in place. New or missing copies are uploaded, then downloaded and compared with the local backup.
 
-Immich also needs its database; a copy of the photos alone does not preserve albums, faces or metadata. [Immich's own backup guidance](https://docs.immich.app/administration/backup-and-restore/)
+New uploads are encrypted before they leave Cubi. Older verified copies stay in place; the upload job does not delete existing cloud copies.
 
-Synchronising off-site is also not the same as keeping history. Retention and recovery from an accidental deletion are a separate question from "the file is in the bucket".
-
-## Known gap
-
-The 6 September review found that the last overall success marker for the application-state job was **23 August**. The 4 September run failed, and the B2 state-transfer step skipped the stale state archive. The marker does not establish when the first failure happened. Repairing this job is still open.
-
-Local logs reported successful Proxmox-archive and Immich-media transfer steps on 4 September, but the combined B2 job was not fully successful because its state step was skipped. Remote objects and a restore from B2 were not verified in that review.
+Upload speed is limited so backups leave bandwidth for the rest of the house. That setting came from an [earlier problem with backup uploads and internet drops](../TROUBLESHOOTING.md#backup-uploads-and-internet-drops).
 
 ## Restore experience
 
-I have restored Home Assistant into a different VM ID as a drill, and it came back. That is one service, once — evidence that the chain works for that case, not that every service is currently recoverable.
+I previously restored Home Assistant into a different VM ID, and it came back. That gave me a useful recovery test for that setup.
 
-A further service restore drill is the next step. It needs to establish:
+The recent cloud checks confirm that the verified copies match the local backups. Restoring the current VMs and checking that their applications can open their data is the next practical test.
 
-- which archive, database and media pieces a given service actually needs;
-- whether the credentials and settings can be recovered securely;
-- whether the restored application can open its own data;
-- whether the whole thing can run without touching the working service.
+I also still need to confirm that I can recover the encryption key without Cubi.
 
 ## Power and internet failures
 
-An Eaton Ellipse PRO 650 carries the lab. Cubi is the NUT master and ZimaBoard is a network slave. On low battery, ZimaBoard goes down first — taking the network with it — and Cubi then shuts its guests down in tiers before the UPS cuts power. I tested that sequence and the automatic recovery when it was built; I have not repeated it since.
+An Eaton Ellipse PRO 650 supplies backup power, and NUT on Cubi monitors it.
 
-The [earlier power and WAN recovery diagram](../diagrams/power-wan-recovery.png) records that design, including the timings used at the time.
+I tested shutdown and automatic recovery when I built the earlier setup. The lab has changed since then, so the complete current sequence still needs to be retested. The [earlier power and WAN recovery diagram](../diagrams/power-wan-recovery.png) records that arrangement.
 
-For internet failures the path is a software recovery attempt first, then a modem power cycle through a Home Assistant-controlled smart plug. [The upload-bandwidth incident](../TROUBLESHOOTING.md#backup-uploads-and-internet-drops) is why that exists.
+The internet-drop incident also led me to add a recovery path for the modem: a software restart first, then a power cycle through a Home Assistant-controlled smart plug. The [troubleshooting story](../TROUBLESHOOTING.md#backup-uploads-and-internet-drops) explains what happened and what I changed.
 
-Appliance backups, passwords and recovery keys are not published here.
+Passwords, recovery keys and appliance backups are not published here.
