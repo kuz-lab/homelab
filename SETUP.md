@@ -36,7 +36,7 @@ Cubi runs most of the lab. Keeping OPNsense on ZimaBoard lets me work on the app
 | Cubi — web services | Caddy and the private application, Homepage, Finance Hub and Authentik |
 | Cubi — monitoring and management | Grafana, InfluxDB and Explorer; Portainer, Beszel and PeaNUT; Uptime Kuma |
 | Cubi — DNS | Primary Technitium DNS |
-| Cubi — dedicated VMs | Home Assistant OS, UniFi OS, Wazuh and Workbench |
+| Cubi — dedicated VMs | Home Assistant OS, UniFi OS, Wazuh and Workbench (AI agent harness) |
 | ZimaBoard | OPNsense VM |
 | Raspberry Pi | Secondary Technitium DNS, Gatus checks and scheduled backups of the Pi itself |
 

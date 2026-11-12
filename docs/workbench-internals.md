@@ -1,6 +1,6 @@
 # How Workbench works
 
-Workbench combines a custom console, native agent sessions and separate workflows for recurring tasks. It runs on a dedicated virtual machine, with a browser interface inside my private website.
+Workbench is an AI agent harness that combines a custom console, native agent sessions and separate workflows for recurring tasks. It runs on a dedicated virtual machine, with a browser interface inside my private website.
 
 I build the application and its integrations with AI coding tools. This page explains the parts around the agents: how work gets its context, how tasks move forward and how results are kept.
 

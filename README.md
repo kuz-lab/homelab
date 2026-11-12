@@ -2,7 +2,7 @@
 
 I run this home lab for my network, photos, documents and home automation. Here I share how it is put together, why I made certain choices, and what I learned when things went wrong.
 
-An MSI Cubi runs the applications in Proxmox VMs and Linux containers. A separate ZimaBoard runs OPNsense for routing and firewalling. A Raspberry Pi provides a second DNS server and monitoring outside the applications host. The lab also hosts Workbench, my workspace for AI agents and recurring tasks.
+An MSI Cubi runs the applications in Proxmox VMs and Linux containers. A separate ZimaBoard runs OPNsense for routing and firewalling. A Raspberry Pi provides a second DNS server and monitoring outside the applications host. The lab also hosts Workbench (AI agent harness), my workspace for AI agents and recurring tasks.
 
 <a href="photos/HomerackFront-2026-11.jpg"><img src="photos/HomerackFront-2026-11.jpg" alt="My home lab rack and Eaton UPS, November 2026" width="380"></a>
 

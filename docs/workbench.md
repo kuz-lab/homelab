@@ -1,6 +1,6 @@
 # Workbench — what I use it for
 
-Workbench is my personal workspace for AI-assisted tasks. I build its web console and integrations with AI coding tools, then use them for my own projects and recurring work.
+Workbench is my personal AI agent harness — a workspace for agents, tasks and their results. I build its web console and integrations with AI coding tools, then use them for my own projects and recurring work.
 
 Some tasks run regularly, such as reviewing incoming documents or researching products. Others start when I ask: analysing a budget summary, comparing options or working through a development task. The console gives me a place to follow the work and return to its results.
 

@@ -16,7 +16,7 @@ These are the services I use for photos, documents, home automation and the lab 
 | Actual Budget | My budget and transactions. |
 | Finance Hub | Reviewing receipts, spending and subscriptions. |
 | Stirling PDF | Everyday PDF tasks. |
-| Workbench | Working with agents and keeping their results in one place. |
+| Workbench (AI agent harness) | Working with agents and keeping their results in one place. |
 
 A separate private web application brings together personal dashboards, reports and Workbench conversations. Fredy is also installed for housing searches.
 
