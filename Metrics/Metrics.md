@@ -16,7 +16,7 @@ I started on InfluxDB 2 and switched to 3 Enterprise about five days later, whil
 
 Long-term downsampling is still on the list. InfluxDB 3 Enterprise supports scheduled processing, including a [Downsampler plugin](https://docs.influxdata.com/influxdb3/enterprise/plugins/library/official/downsampler/); an external scheduler is not the only option. I have not set up that workflow here yet.
 
-## What runs now
+## September deployment snapshot
 
 Observed during the 6 September 2026 check:
 

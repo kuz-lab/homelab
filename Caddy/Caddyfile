@@ -7,6 +7,8 @@
 (tls_cf) {
         tls {
                 dns cloudflare {env.CF_API_TOKEN}
+                # Use the public zone for DNS-01 checks instead of internal DNS.
+                resolvers arch.ns.cloudflare.com:53 nia.ns.cloudflare.com:53
         }
 }
 
@@ -89,7 +91,7 @@ nr.kuzlab.dev {
         reverse_proxy 192.168.40.16:1880
 }
 
-budget.kuzlab.dev {
+actual.kuzlab.dev {
         import tls_cf
         import common
         reverse_proxy 192.168.40.17:5006

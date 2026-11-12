@@ -2,7 +2,7 @@
 
 Workbench is my personal AI agent harness — a workspace for agents, tasks and their results. I build its web console and integrations with AI coding tools, then use them for my own projects and recurring work.
 
-Some tasks run regularly, such as reviewing incoming documents or researching products. Others start when I ask: analysing a budget summary, comparing options or working through a development task. The console gives me a place to follow the work and return to its results.
+Some tasks run regularly, such as reviewing incoming documents or researching products. Others start when I ask: comparing options or working through a development task. The console gives me a place to follow the work and return to its results.
 
 ## Documents and paperwork
 
@@ -18,9 +18,9 @@ This leaves me with organised documents and a smaller set of cases that need a d
 
 Receipts need a different kind of checking. Codex and Claude read the prepared receipt text independently. Code compares their answers, checks the supporting text and looks for possible matches with transactions.
 
-The result is a review report with matching candidates. Category updates, where permitted, go through a separate integration with Actual Budget.
+The result is a review report with matching candidates. Eligible expenses can receive categories automatically under rules I have enabled, through a separate integration with Actual Budget.
 
-Budget analysis starts when I request it. I can ask an agent to examine a prepared budget summary and return suggestions for me to review. Questions about purchases or subscriptions follow a similar pattern: I discuss the choice, receive a proposal and decide what to do.
+Budget reviews run weekly, when significant changes need another look, or when I request one. I can ask an agent to examine a prepared budget summary and return suggestions for me to review. Questions about purchases or subscriptions follow a similar pattern: I discuss the choice, receive a proposal and decide what to do.
 
 Document organisation, receipt matching and budget analysis are separate jobs. They share information where needed, but each produces its own result.
 

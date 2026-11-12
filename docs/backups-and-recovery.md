@@ -12,7 +12,7 @@ I keep full backups of my VMs and containers on a separate SSD in Cubi, with ano
 | OPNsense on ZimaBoard | Full VM backup sent to Cubi over NFS | Backblaze B2 |
 | Raspberry Pi | System backup made with raspiBackup and stored on Cubi | Backblaze B2 |
 
-All 23 Proxmox guests and the Raspberry Pi have at least one verified cloud copy. This includes Workbench (AI agent harness), Finance Hub, Authentik and the Windows VM.
+The check on 12 November 2026 confirmed at least one verified cloud copy for all 23 Proxmox guests and the Raspberry Pi. This includes Workbench (AI agent harness), Finance Hub, Authentik and the Windows VM.
 
 Application data and settings stay inside their VM or container. For Immich, that means the photos, database and configuration are included together in the full container backup.
 
