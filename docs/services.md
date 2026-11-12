@@ -1,69 +1,74 @@
 # Selected Services
 
-These are the parts of the lab I use and document here. Locations and runtimes were checked on 6 September 2026; this is a selected inventory, not everything installed.
+These are the services I use for photos, documents, home automation and the lab itself.
 
-[Overview](../README.md) · [Network](network-and-access.md) · [Backups](backups-and-recovery.md)
+[Overview](../README.md) · [Hardware and setup](../SETUP.md) · [Network](network-and-access.md) · [Backups](backups-and-recovery.md)
 
 ## Everyday use
 
-| Service | Where it runs on Cubi | What I use it for | Notes or example |
-| --- | --- | --- | --- |
-| Home Assistant | VM 202 | Home automation and device dashboards | [Home Assistant](../HomeAssistant.md) |
-| Immich | LXC 106, Docker | Photos and videos | [Setup and data storage](../Immich/Immich.md) |
-| Paperless-ngx | LXC 103, Docker | Documents, with IMAP intake | [Compose example](../Paperless/docker-compose.yml) |
-| Vaultwarden | LXC 107, Docker | Password management | No configuration published |
-| Actual Budget | LXC 105, Docker | Personal finances | [Compose example](../Actual/docker-compose.yml) |
-| Node-RED | LXC 104, Docker | Home-automation flows | [Compose example](../Node-RED/docker-compose.yml) |
-| Stirling PDF | LXC 115, Docker | PDF tools | No configuration published |
+| Service | What I use it for |
+| --- | --- |
+| Home Assistant | Home automations, heating and device controls. |
+| Node-RED | Connecting devices and services into home-automation flows. |
+| Immich | My photos and videos. |
+| Paperless-ngx | Keeping documents organised and easy to find. |
+| Vaultwarden | Passwords across my devices. |
+| Actual Budget | My budget and transactions. |
+| Finance Hub | Reviewing receipts, spending and subscriptions. |
+| Stirling PDF | Everyday PDF tasks. |
+| Workbench | Working with agents and keeping their results in one place. |
 
-An LXC is a Linux container managed by Proxmox. For the Docker services it gives the application and its supporting containers their own Linux environment, so each one runs its own Docker daemon rather than sharing a single socket across the whole host.
+A separate private web application brings together personal dashboards, reports and Workbench conversations. Fredy is also installed for housing searches.
+
+[Home Assistant](../HomeAssistant.md) · [Immich](../Immich/Immich.md) · [Workbench use cases](workbench.md)
 
 ## Network and management
 
-| Service | Location | Runtime | Purpose |
-| --- | --- | --- | --- |
-| OPNsense | VM 108 on ZimaBoard | — | Router and firewall |
-| UniFi OS Server | VM 201 on Cubi | — | Switch and access-point management |
-| Wazuh | VM 200 on Cubi | — | Log collection and vulnerability alerts |
-| AdGuard Home | LXC 102 | native | Client DNS filtering |
-| Caddy | LXC 109 | Docker | HTTPS entry point for the web applications |
-| Gitea | LXC 101 | native | Private configuration repository |
-| Portainer | LXC 110 | Docker | Managing the Docker environments |
-| ntfy | LXC 112 | native | Push notifications |
-| Uptime Kuma | LXC 114 | native | Availability monitoring |
+| Service | What I use it for |
+| --- | --- |
+| OPNsense | Routing and firewall rules for the home network. |
+| UniFi | Managing the switch and Wi-Fi. |
+| Technitium DNS | DNS on Cubi and the Raspberry Pi. |
+| Caddy | HTTPS for my web applications. |
+| Authentik | One sign-in for the apps I’ve connected to it. |
+| Gitea | Keeping my code and configurations. |
+| Portainer | Managing the Docker applications. |
 
 [How Caddy is set up](../Caddy/Caddy.md) · [Network design](network-and-access.md)
 
 ## Monitoring and dashboards
 
-I run several monitoring tools because each answers a different question, and they overlap less than the list suggests.
+Homepage is where I open the applications and check the lab at a glance.
 
-| Tool | The question it answers |
+| Tool | What I use it for |
 | --- | --- |
-| Uptime Kuma | Is a host or service reachable? |
-| Beszel | What are CPU, memory, storage and temperature doing right now? |
-| Grafana + InfluxDB 3 | How have the measurements changed over weeks and months? |
-| Wazuh | What needs patching, and what showed up in the logs? |
-| PeaNUT | What is the UPS reporting? |
-| ntfy | How does any of this reach my phone? |
-| Homarr | Where do I see all of it on one page? |
+| Uptime Kuma | Service availability and outage history. |
+| Gatus | Checking services from the Pi, independently of Cubi. |
+| Healthchecks.io | Getting an alert when my home internet goes down. |
+| Beszel | CPU, memory, temperatures and storage across the three hosts. |
+| Grafana + InfluxDB 3 | Tracking electricity use and running costs. |
+| Wazuh | Reviewing security events and vulnerabilities. |
+| PeaNUT | Checking the UPS. |
+| Pushover | Receiving alerts on my phone. |
 
-Grafana and InfluxDB 3 run in LXC 100; Beszel's hub and PeaNUT share the Portainer LXC. The Beszel agents run on the Proxmox hosts themselves rather than inside a container, because they need to read real hardware temperatures rather than a value passed through Home Assistant. [Metrics details](../Metrics/Metrics.md)
+If my home internet goes down, the lab can’t send me an alert. Healthchecks.io notices that the Pi has stopped checking in and sends a Pushover notification from outside my network.
 
-Homarr is the main dashboard now. Homepage was the first one and still runs; retiring it is on the list, held up by a few monitors and a firewall rule that still point at it. Its [Compose example](../Homepage/docker-compose.yml) is kept for reference.
+Keeping the lab running costs about €13 a month in electricity, including the UPS. [Here’s October as an example](../SETUP.md#running-cost).
+
+ntfy remains for older integrations. [Homepage screenshot](../SETUP.md#homepage) · [Metrics notes](../Metrics/Metrics.md)
 
 ### Wazuh and patching
 
-I use Wazuh's vulnerability alerts and logs to decide what needs attention. The setup also includes ntfy notifications and a daily CVE digest. Its role here is to support patching and investigation, not to certify that every service is secure.
+Wazuh got me looking more closely at updates: a service could be running normally while its packages still needed attention.
 
-Learning to use Wazuh and seeing the CVE reports across different services prompted me to look more closely at updates. A service could be running normally while its underlying packages still needed attention. That made vulnerability reports a useful companion to the uptime dashboard.
+Audit collects information about the machines. Scheduled OS maintenance runs on Cubi, checks the results of updates, and feeds fresh findings into Workbench for analysis of the remaining CVEs. [How the update cycle works](workbench-internals.md#audit-updates-and-remaining-cves).
 
 ## Configuration and management
 
-For the Git-backed Portainer stacks, I edit the Compose files in a private Gitea repository, push the changes, then redeploy from Portainer. Credentials are supplied separately through environment settings or private files rather than included in the public examples.
+I manage the lab from my Mac and keep configurations in a private Gitea repository. Portainer handles the Docker stacks, and I use Ansible for selected administration tasks.
 
-Some dashboard integrations use Docker socket proxies to restrict the API operations they can request. Permissions differ between integrations; the proxies are not a single protection layer for everything. Portainer agents also have direct Docker socket access, which needs to be treated as privileged access to their Docker environments.
+The Compose files here are examples, not copies of the running setup:
 
-The compose files published here are examples. Local paths, secrets and some current settings are not included, so read the service notes before reusing one.
+[Paperless](../Paperless/docker-compose.yml) · [Actual Budget](../Actual/docker-compose.yml) · [Node-RED](../Node-RED/docker-compose.yml) · [Homepage](../Homepage/docker-compose.yml)
 
-My initial Ansible use was a fleet audit and a few service tasks. The access setup later gained a `common` role for users, SSH keys and sudo. The larger automation environment that developed afterwards is outside the scope of this repository. [SSH history and access model](network-and-access.md#administration)
+[SSH history and access model](network-and-access.md#administration) · [How Workbench works](workbench-internals.md)
