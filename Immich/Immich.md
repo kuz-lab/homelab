@@ -1,29 +1,35 @@
 # Immich
 
-Immich is my replacement for cloud photo backup. It runs in a Linux container on Cubi, with Docker containers for the application, its machine-learning component, the database and the cache.
-
 [Overview](../README.md) · [Backups and recovery](../docs/backups-and-recovery.md)
 
-## Data storage
+## Why I use Immich
 
-The library lives on Cubi's second SSD and is mounted into the LXC:
+I use Immich for my photos and videos. It gives me automatic backup from my phone, a web gallery and search, while keeping the main library on my own hardware.
 
-`/mnt/pve/data1/immich` → `/mnt/immich-media`
+It is one of the services I built the lab around: somewhere to keep my photos, browse them and have them included in my backup routine.
 
-Keeping it out of the container's root filesystem means the container can be rebuilt without touching the photos. It also means the photos are not in the container's backup — which is the part worth knowing about.
+## How it runs
 
-The database sits at `/opt/immich/postgres` inside the LXC, and Caddy forwards the web interface to port 2283.
+Immich runs in a Linux container on Cubi, with Docker Compose managing the application and its supporting services.
 
-## Backups
+Caddy provides HTTPS, and I use Authentik to sign in. That also works from the Immich app on my iPhone.
 
-The Proxmox backup log excludes the media bind mount, so the library has its own transfer to Backblaze B2 alongside the LXC archive.
+## Storage and backups
 
-A usable restore needs both: the media and the database. Photos alone lose the albums, the metadata and the face recognition. I have copies of both; I have not yet rebuilt the service from them, so I would not call it a tested recovery. [Official backup guidance](https://docs.immich.app/administration/backup-and-restore/)
+I used to keep the photo library outside the container, which meant backing it up separately. Now the photos, database and settings all live inside the Immich container and are included in its full Proxmox backup.
 
-The [lab backup notes](../docs/backups-and-recovery.md) have the schedule.
+A local copy goes to the backup SSD on Cubi, and a copy is kept in Backblaze B2.
+
+Keeping the database with the photos matters: the files alone do not preserve albums, recognised faces and the rest of the library information.
+
+The archive and its cloud copy have been checked. I have not yet restored the current Immich setup from that backup and checked it through the application.
+
+The [backup page](../docs/backups-and-recovery.md) covers the schedule and cloud checks.
 
 ## Compose example
 
-The [published Compose file](docker-compose.yml) uses variables for the storage paths, the database credentials and the Immich version. It is a reference rather than an export of the running deployment.
+The [Compose file in this repository](docker-compose.yml) is a reference example, with variables for storage paths, credentials and the Immich version.
 
-One thing to change before using it: the version variable has a moving default, so the file on its own does not pin a release. Immich moves fast and its database migrations are one-way — pick a version deliberately and read its release notes.
+My running installation uses specific pinned releases. I review the release notes before updating, especially when an update changes the database.
+
+Photos, database contents and credentials are not included in this repository.
