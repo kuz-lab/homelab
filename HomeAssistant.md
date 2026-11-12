@@ -28,23 +28,11 @@ There are also notifications for low batteries and unavailable battery-powered s
 
 Home Assistant connects the devices and provides the controls and dashboards. Some automations run directly in Home Assistant; others run in Node-RED.
 
+Devices connect over Zigbee, Thread, Wi-Fi and Bluetooth. ESPHome handles the [e-paper display](HomeAssistant/esphome/epaper.yaml) and [Bluetooth proxies](HomeAssistant/esphome/ble-proxy.yaml).
+
 [Workbench (AI Agent harness)](docs/workbench.md) can inspect device availability through HA Observer and help investigate problems. The observer collects status and sends notifications on its own. Agents can read those observations, but changes remain a separate step.
 
 The dashboards include a 3D view of the apartment with device status. An [earlier dashboard screenshot](screenshots/HAOS.png) shows a previous version of the interface.
-
-## Devices and examples
-
-**E-paper display.** An ESP32 downloads a prepared dashboard image, updates the display and sleeps until the next update.
-
-[ESPHome example](HomeAssistant/esphome/epaper.yaml)
-
-**Bluetooth proxies.** ESP32 boards connect Bluetooth devices back to Home Assistant over the network, extending coverage to other rooms.
-
-[ESPHome example](HomeAssistant/esphome/ble-proxy.yaml)
-
-**Zigbee and Thread.** The [SMLIGHT SLZB-MR5U](https://smlight.tech/products/slzb-mr5u) supports both protocols. My Zigbee network connects through it over Ethernet, with power supplied by PoE.
-
-The ESPHome files are examples for my boards and wiring. They need adapting before use on other hardware.
 
 ## When the modem stopped responding
 
