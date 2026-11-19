@@ -42,7 +42,7 @@ Some guests are stopped while their backup runs. These are scheduled maintenance
 
 ## Cloud copies and checks
 
-The cloud job checks the latest completed local backups. If the same verified copy is already in B2, it is left in place. New or missing copies are uploaded, then downloaded and compared with the local backup.
+I updated the cloud checks on 19 November 2026. The job checks the latest completed local backups and leaves existing cloud copies in place. Missing files are uploaded, then checked for remote presence, matching size and stable object identity. Routine checks no longer download backups again.
 
 New uploads are encrypted before they leave Cubi. Older verified copies stay in place; the upload job does not delete existing cloud copies.
 
