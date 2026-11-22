@@ -168,6 +168,8 @@ Notifications help separate attention from routine activity. Questions and impor
 
 I also use Workbench to keep selected project guides up to date. Checks look for broken links, repeated material and changes that may leave the guides behind.
 
+I use Workbench to check this portfolio every week, with a deeper review every two weeks. It can publish small, verified corrections automatically. I choose which larger changes to include.
+
 An agent proposes a correction, and another reviews it. Before saving, the integration checks that the original file has not changed and that the links still work. It then reads the saved file back.
 
 The report shows what changed and what still needs attention.

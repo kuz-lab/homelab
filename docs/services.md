@@ -61,6 +61,8 @@ ntfy remains for older integrations. [Homepage screenshot](../SETUP.md#homepage)
 
 Wazuh got me looking more closely at updates: a service could be running normally while its packages still needed attention.
 
+I use automatic version checks and a separate controller for service updates. It checks the maintenance window and recovery copy first. On 15 November 2026 it updated Beszel from 0.21.0 to 0.21.2 and verified that the application stayed healthy for at least five minutes.
+
 Audit and scheduled maintenance on Cubi handle the checks and permitted updates. Workbench helps explain the CVEs left afterwards. [How the update cycle works](workbench-internals.md#audit-updates-and-remaining-cves).
 
 ## Configuration and management
